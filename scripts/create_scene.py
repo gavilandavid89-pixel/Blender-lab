@@ -88,8 +88,7 @@ area_light("Warm Rim", (3.5, 2.5, 5), 1250, 3.0, (1.0, 0.48, 0.2))
 area_light("Fill", (-4, 1, 3.5), 700, 4.0, (0.28, 0.48, 1.0))
 
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE_NEXT"
-# Support older Blender releases too.
+# Prefer Eevee Next on newer versions; fall back on older Blender releases.
 try:
     scene.render.engine = "BLENDER_EEVEE_NEXT"
 except Exception:
