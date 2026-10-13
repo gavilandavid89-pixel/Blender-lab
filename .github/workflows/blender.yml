@@ -1,0 +1,50 @@
+name: Blender Headless Lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/blender.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blender-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Build scene and render preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out lab
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Run scene generator
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p artifacts
+          blender --background --factory-startup --python scripts/create_scene.py 2>&1 | tee blender.log
+
+      - name: Publish scene, render and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-lab-output
+          path: |
+            artifacts/
+            blender.log
+          if-no-files-found: warn
+          retention-days: 14
