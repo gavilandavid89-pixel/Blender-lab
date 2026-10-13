@@ -20,25 +20,63 @@ jobs:
   render:
     name: Build scene and render preview
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out lab
         uses: actions/checkout@v4
 
-      - name: Install Blender
+      - name: Install Linux graphics runtime
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
-          blender --version
+          sudo apt-get install -y curl xz-utils libegl1 libgl1 libxkbcommon0 libxi6 libxrender1 libxfixes3 libx11-6 libxext6 libsm6 libice6 libxxf86vm1 libgomp1
 
-      - name: Run scene generator
+      - name: Install Blender 5.2.2
         shell: bash
         run: |
-          set -o pipefail
-          mkdir -p artifacts
-          blender --background --factory-startup --python scripts/create_scene.py 2>&1 | tee blender.log
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 2 \
+            https://download.blender.org/release/Blender5.2/blender-5.2.2-linux-x64.tar.xz \
+            -o /tmp/blender.tar.xz
+          tar -xJf /tmp/blender.tar.xz -C /tmp
+          echo "/tmp/blender-5.2.2-linux-x64" >> "$GITHUB_PATH"
+          /tmp/blender-5.2.2-linux-x64/blender --version
 
-      - name: Publish scene, render and logs
+      - name: Run scene generator with diagnostics and one retry
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts
+          BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+          "$BLENDER_BIN" --background --factory-startup --python scripts/create_scene.py 2>&1 | tee blender.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "First Blender attempt failed with exit code $status" | tee -a blender.log
+            echo "Retrying once after clearing Blender user config and using software GL..." | tee -a blender.log
+            rm -rf /tmp/blender-user-config
+            BLENDER_USER_CONFIG=/tmp/blender-user-config \
+              "$BLENDER_BIN" --background --factory-startup --python scripts/create_scene.py 2>&1 | tee -a blender.log
+            status=${PIPESTATUS[0]}
+          fi
+          echo "$status" > artifacts/exit-code.txt
+          if [ "$status" -ne 0 ]; then
+            echo "Blender failed after retry. Last log lines:" | tee -a blender.log
+            tail -n 100 blender.log
+            exit "$status"
+          fi
+
+      - name: Validate output files
+        if: success()
+        shell: bash
+        run: |
+          test -s artifacts/blender-lab-scene.blend
+          test -s artifacts/blender-lab-preview.png
+          test -s artifacts/scene-summary.json
+          file artifacts/blender-lab-preview.png
+          cat artifacts/scene-summary.json
+
+      - name: Publish scene, render and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
