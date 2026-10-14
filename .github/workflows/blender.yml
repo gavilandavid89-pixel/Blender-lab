@@ -41,7 +41,7 @@ jobs:
           echo "/tmp/blender-5.2.2-linux-x64" >> "$GITHUB_PATH"
           /tmp/blender-5.2.2-linux-x64/blender --version
 
-      - name: Run scene generator with diagnostics and one retry
+      - name: Run ST-LAT world generator with diagnostics and one retry
         shell: bash
         run: |
           set +e
@@ -49,7 +49,7 @@ jobs:
           BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
-          "$BLENDER_BIN" --background --factory-startup --python scripts/create_scene.py 2>&1 | tee blender.log
+          "$BLENDER_BIN" --background --factory-startup --python scripts/world3d_probe.py 2>&1 | tee blender.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             echo "First Blender attempt failed with exit code $status" | tee -a blender.log
@@ -70,11 +70,12 @@ jobs:
         if: success()
         shell: bash
         run: |
-          test -s artifacts/blender-lab-scene.blend
-          test -s artifacts/blender-lab-preview.png
-          test -s artifacts/scene-summary.json
-          file artifacts/blender-lab-preview.png
-          cat artifacts/scene-summary.json
+          test -s artifacts/stlat-world3d.blend
+          test -s artifacts/stlat-world3d-main.png
+          test -s artifacts/stlat-world3d-topdown.png
+          test -s artifacts/stlat-world3d-manifest.json
+          file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
+          cat artifacts/stlat-world3d-manifest.json
 
       - name: Publish scene, render and diagnostics
         if: always()
