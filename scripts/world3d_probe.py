@@ -132,7 +132,6 @@ scene.render.image_settings.color_depth = "8"
 scene.view_settings.view_transform = "Standard"
 scene.view_settings.look = "Medium High Contrast"
 scene.world.color = (0.12, 0.12, 0.12)
-scene.camera.data.dof.use_dof = False if scene.camera else False
 
 def make_camera(name, loc, target, lens=45):
     bpy.ops.object.camera_add(location=loc)
