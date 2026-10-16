@@ -1,6 +1,6 @@
 # ST-LAT Engine — matriz de pruebas
 
-**Última actualización:** 2026-10-16  
+**Última actualización:** 2026-10-15  
 **Regla:** una capacidad se marca como implementada solo si existe código ejecutable y una prueba reproducible. Una especificación o un archivo de ejemplo, por sí solos, no prueban que el motor aplique esa regla en tiempo de ejecución.
 
 ## 1. Ejecutar las pruebas
@@ -10,12 +10,13 @@ Desde la raíz del repositorio:
 ```bash
 python3 scripts/validate_scene_profiles.py
 python3 scripts/validate_world_manifest.py --self-test
+python3 scripts/validate_motion_report.py --self-test
 python3 -m unittest discover -s tests -v
 ```
 
 La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento, valida el manifiesto real y publica el artefacto `stlat-world3d-output`.
 
-Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión `tests/` se añade en el siguiente cambio y necesitará su propia ejecución verde antes de considerarse validada por CI.
+Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión `tests/` y el validador independiente del informe de movimiento se incorporan en los commits siguientes; necesitan una ejecución completa verde para considerarse validados por CI.
 
 ## 2. Matriz actual
 
@@ -37,7 +38,8 @@ Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89
 | T-014 | IDs duplicados | `tests/test_contracts.py` | Prueba unitaria negativa | Alcance local a un manifiesto |
 | T-015 | Cantidad de objetos no coincide | `tests/test_contracts.py` | Prueba unitaria negativa | No garantiza identidad entre ejecuciones |
 | T-016 | El ejemplo de perfil viola su contrato | Subproceso de `validate_scene_profiles.py` desde unittest | Prueba de integración ligera | No valida todo el vocabulario JSON Schema genérico |
-| T-017 | Salida con informe de movimiento fallido | El propio validador lanza excepción si un check falla | Código de salida no cero en CI | El informe aún no tiene un validador independiente de esquema |
+| T-017 | Salida con informe de movimiento fallido | El script de movimiento lanza excepción si un check falla | Código de salida no cero en CI | El script que genera la evidencia y el validador son controles separados |
+| T-018 | Informe persistido incompleto o evidencia contradictoria | `scripts/validate_motion_report.py` + autoprueba negativa | `MOTION_REPORT_VALIDATION=PASS` | Valida la evidencia estructurada; no reejecuta la física ni certifica el mundo real |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
@@ -53,7 +55,7 @@ Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |
 | F-009 | Registrar origen y confianza de cada valor: explícito, aprobado, default, inferido o desconocido | Pendiente; ledger M15 no implementado |
 | F-010 | Reparación limitada que nunca relaje restricciones superiores para “pasar” | Pendiente; M11 es diseño |
-| F-011 | Repetición limpia de CI con todos los tests rápidos y Blender en verde | Debe verificarse después de este commit |
+| F-011 | Repetición limpia de CI con todos los tests rápidos y Blender en verde | Debe verificarse después de estos cambios |
 
 ## 4. Criterio de aprobación
 
