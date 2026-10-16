@@ -11,10 +11,11 @@ Desde la raíz del repositorio:
 python3 scripts/validate_scene_profiles.py
 python3 scripts/validate_world_manifest.py --self-test
 python3 scripts/validate_motion_report.py --self-test
+python3 scripts/validate_camera_isolation_report.py --self-test
 python3 -m unittest discover -s tests -v
 ```
 
-La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento, valida el manifiesto real y publica el artefacto `stlat-world3d-output`.
+La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento y manifiesto, prueba el aislamiento de cámara sobre la escena guardada y publica el artefacto `stlat-world3d-output`.
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
@@ -50,7 +51,7 @@ Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89
 
 | ID futuro | Prueba que debe existir antes de integrar un generador de vídeo | Estado |
 |---|---|---|
-| F-001 | Cambiar cámara y demostrar que ninguna transformación canónica del mundo cambia | Parcial: validador de estados JSON implementado; falta integrarlo con operaciones reales de cámara de Blender |
+| F-001 | Cambiar cámara y demostrar que ninguna transformación canónica del mundo cambia | Parcial: prueba real de Blender integrada en CI; falta una capa de permisos/API que impida mutaciones externas |
 | F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Parcial: continuidad de IDs y campos protegidos comprobada entre snapshots; no existe todavía registro persistente de assets/identidades |
 | F-003 | Aplicar una orden explícita que contradice un default y demostrar que gana la orden, registrando el conflicto | Pendiente; contrato documentado, motor M15 no implementado |
 | F-004 | Prompt sin muebles/armas/vehículos: comprobar que no aparecen entidades implícitas | Pendiente; el perfil declara prohibiciones, no hay compilador de prompt integrado |

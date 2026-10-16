@@ -13,6 +13,7 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 - `stlat-world3d-topdown.png`: referencia cenital.
 - `stlat-world3d-manifest.json`: contrato del mundo, ejes, unidades, roles, transformaciones, AABB y validaciones estructurales.
 - `stlat-world3d-motion-validation.json`: resultado de pruebas de recorrido seguro, colisión deliberada con la cama y salida deliberada de los límites.
+- `stlat-world3d-camera-isolation.json`: evidencia de una prueba sobre la escena guardada que cambia cámara, transformación y lente y compara transformaciones y geometría evaluada de todos los objetos no cámara.
 - `blender.log`: registro de ejecución.
 
 ## Contrato espacial inicial
@@ -55,11 +56,12 @@ Desde la raíz del repositorio, las comprobaciones rápidas no necesitan Blender
 python3 scripts/validate_scene_profiles.py
 python3 scripts/validate_world_manifest.py --self-test
 python3 scripts/validate_motion_report.py --self-test
+python3 scripts/validate_camera_isolation_report.py --self-test
 python3 -m unittest discover -s tests -v
 # La suite incluye contratos de snapshots, continuidad de identidad y aislamiento de cámara
 ```
 
-La acción de GitHub ejecuta estos controles antes de instalar Blender y después construye la escena, valida el informe persistido de movimiento y el manifiesto, y publica los artefactos. La [matriz de pruebas](docs/TEST_MATRIX.md) separa las comprobaciones reales de las capacidades aún pendientes; la [guía de CI y diagnóstico](docs/CI_AND_ARTIFACTS.md) explica cómo interpretar los informes y depurar fallos.
+La acción de GitHub ejecuta estos controles antes de instalar Blender y después construye la escena, valida movimiento y manifiesto, ejecuta una prueba de aislamiento de cámara sobre el archivo .blend guardado y publica los informes y artefactos. La [matriz de pruebas](docs/TEST_MATRIX.md) separa las comprobaciones reales de las capacidades aún pendientes; la [guía de CI y diagnóstico](docs/CI_AND_ARTIFACTS.md) explica cómo interpretar los informes y depurar fallos.
 
 ## Ejecución
 

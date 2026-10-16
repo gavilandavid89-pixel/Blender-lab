@@ -129,3 +129,8 @@ Las pruebas están en `tests/test_world_state_contract.py`. Esto es una **capa d
 5. Generar referencias frontales, laterales y cenitales asociadas a la misma versión de mundo.
 6. Añadir perfiles de identidad/rig y pruebas de continuidad.
 7. Solo después conectar un generador de vídeo y medir su obediencia real.
+
+
+## 9. Prueba ejecutable de aislamiento de cámara
+
+`scripts/world3d_validate_camera_isolation.py` abre la escena guardada desde el workflow, registra las firmas de todos los objetos no cámara, modifica posición/rotación/lente de `Camera.Main`, alterna la cámara activa y vuelve a comparar transformaciones, dimensiones y hash de vértices de malla evaluados en coordenadas de mundo. Escribe `artifacts/stlat-world3d-camera-isolation.json`; el validador independiente `scripts/validate_camera_isolation_report.py` comprueba la evidencia. La escena modificada no se guarda. Esta prueba detecta efectos colaterales de las operaciones probadas, pero no es un sistema de permisos que impida que un script externo cambie objetos.
