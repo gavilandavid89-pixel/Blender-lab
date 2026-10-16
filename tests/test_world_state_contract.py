@@ -2,6 +2,7 @@
 """Regression tests for ST-LAT world snapshot versioning and identity invariants."""
 from __future__ import annotations
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
