@@ -59,6 +59,16 @@ def run_self_test(output_path: Path) -> dict:
         )
         checks["idempotent_save_is_safe"] = store.save_snapshot(version_two).name == "v00000002.json"
 
+        gap_store = WorldStateStore(Path(temp) / "gap-store")
+        first_path = gap_store.save_snapshot(initial)
+        gap_store.save_snapshot(version_two)
+        first_path.unlink()
+        try:
+            gap_store.load_latest(initial["world_id"])
+            checks["missing_history_version_rejected"] = False
+        except SnapshotStoreError:
+            checks["missing_history_version_rejected"] = True
+
         altered = copy.deepcopy(version_two)
         altered["timestamp"] = 2.5
         try:

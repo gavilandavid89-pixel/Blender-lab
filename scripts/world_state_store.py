@@ -89,7 +89,7 @@ class WorldStateStore:
         else:
             if version != latest + 1:
                 raise SnapshotStoreError(f"new snapshot version must be latest version {latest} + 1")
-            previous = self.load_snapshot(world_id, latest)
+            previous = self.load_latest(world_id)
             transition_errors = validate_transition(previous, snapshot)
             if transition_errors:
                 raise SnapshotStoreError("snapshot transition invalid: " + "; ".join(transition_errors))
@@ -143,4 +143,18 @@ class WorldStateStore:
                 versions.append(int(match.group(1)))
         if not versions:
             raise SnapshotStoreError("no snapshots exist for this world")
-        return self.load_snapshot(world_id, max(versions))
+        ordered = sorted(versions)
+        expected = list(range(1, ordered[-1] + 1))
+        if ordered != expected:
+            raise SnapshotStoreError("snapshot history has missing versions or a non-contiguous sequence")
+        previous = None
+        for version in ordered:
+            current = self.load_snapshot(world_id, version)
+            if previous is not None:
+                transition_errors = validate_transition(previous, current)
+                if transition_errors:
+                    raise SnapshotStoreError(
+                        f"snapshot history transition invalid at version {version}: " + "; ".join(transition_errors)
+                    )
+            previous = current
+        return previous

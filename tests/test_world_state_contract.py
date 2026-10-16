@@ -365,6 +365,14 @@ class WorldStateStoreTests(unittest.TestCase):
         invalid_next["entities"][1]["identity_ref"] = "identity.vegeta"
         with self.assertRaisesRegex(self.StoreError, "transition invalid"):
             store.save_snapshot(invalid_next)
+    def test_snapshot_store_detects_missing_history_version(self):
+        store = self.Store(self.root)
+        first_path = store.save_snapshot(self.initial)
+        store.save_snapshot(self.next_state)
+        first_path.unlink()
+        with self.assertRaisesRegex(self.StoreError, "missing versions"):
+            store.load_latest("world-alpha")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
