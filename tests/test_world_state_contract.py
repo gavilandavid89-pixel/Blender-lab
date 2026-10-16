@@ -112,7 +112,7 @@ class WorldStateValidationTests(unittest.TestCase):
     def test_camera_change_with_character_mutation_fails(self):
         before = snapshot(); after = snapshot(2, before["entities"])
         after["entities"][2]["transform"]["position"] = [1.0, -3.0, 2.0]
-        after["entities"][1]["transform"]["position"] = [9.0, 0.0, 0.0]
+        after["entities"][1]["transform"]["position"] = [1.0, 0.0, 0.0]
         self.assertTrue(any("modified non-camera" in e for e in contract.validate_camera_isolation(before, after)))
 
     def test_camera_only_operation_must_change_a_camera(self):
