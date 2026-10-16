@@ -5,14 +5,14 @@ import copy
 import json
 import math
 from typing import Any
-from world_state_contract import validate_state, validate_transition
+from world_state_contract import IDENTITY_ATTRIBUTES, validate_state, validate_transition
 
 
 class ReplayError(ValueError):
     """Raised when an event cannot be safely applied to the world state."""
 
 
-SUPPORTED_EVENTS = {"entity_created", "entity_removed", "transform_updated"}
+SUPPORTED_EVENTS = {"entity_created", "entity_removed", "transform_updated", "entity_role_change_approved", "identity_change_approved"}
 
 
 def replay_events(initial_state: Any, events: Any) -> dict[str, Any]:
@@ -90,6 +90,48 @@ def replay_events(initial_state: Any, events: Any) -> dict[str, Any]:
                 raise ReplayError(f"{prefix}.payload must include complete transform and bounds objects")
             entity["transform"] = copy.deepcopy(transform)
             entity["bounds"] = copy.deepcopy(bounds)
+        elif event_type == "entity_role_change_approved":
+            entity = entities.get(target_id)
+            if entity is None:
+                raise ReplayError(f"{prefix} target entity {target_id!r} does not exist")
+            previous_role, new_role = event.get("previous_role"), event.get("new_role")
+            if previous_role != entity.get("role"):
+                raise ReplayError(f"{prefix}.previous_role does not match current entity role")
+            if not isinstance(new_role, str) or not new_role.strip() or new_role == previous_role:
+                raise ReplayError(f"{prefix}.new_role must be a different non-empty role")
+            if payload:
+                raise ReplayError(f"{prefix}.payload must be empty for entity_role_change_approved")
+            entity["role"] = new_role
+        elif event_type == "identity_change_approved":
+            entity = entities.get(target_id)
+            if entity is None:
+                raise ReplayError(f"{prefix} target entity {target_id!r} does not exist")
+            if "previous_identity_ref" not in event or "new_identity_ref" not in event:
+                raise ReplayError(f"{prefix} must declare previous_identity_ref and new_identity_ref")
+            previous_ref, new_ref = event["previous_identity_ref"], event["new_identity_ref"]
+            if previous_ref != entity.get("identity_ref"):
+                raise ReplayError(f"{prefix}.previous_identity_ref does not match current identity")
+            if new_ref is not None and not isinstance(new_ref, str):
+                raise ReplayError(f"{prefix}.new_identity_ref must be a string or null")
+            changed_attrs = event.get("changed_identity_attributes", [])
+            if not isinstance(changed_attrs, list) or any(
+                not isinstance(key, str) or key not in IDENTITY_ATTRIBUTES for key in changed_attrs
+            ) or len(set(changed_attrs)) != len(changed_attrs):
+                raise ReplayError(f"{prefix}.changed_identity_attributes contains unsupported or duplicate attributes")
+            if set(payload) - {"attributes"}:
+                raise ReplayError(f"{prefix}.payload only supports an attributes object")
+            attribute_values = payload.get("attributes", {})
+            if not isinstance(attribute_values, dict) or set(attribute_values) != set(changed_attrs):
+                raise ReplayError(f"{prefix}.payload.attributes must exactly match changed_identity_attributes")
+            identity_changed = previous_ref != new_ref
+            if not identity_changed and not changed_attrs:
+                raise ReplayError(f"{prefix} must change identity_ref or a protected identity attribute")
+            attributes = entity.setdefault("attributes", {})
+            for key in changed_attrs:
+                if attributes.get(key) == attribute_values[key]:
+                    raise ReplayError(f"{prefix} declares {key} changed but its value is unchanged")
+                attributes[key] = copy.deepcopy(attribute_values[key])
+            entity["identity_ref"] = new_ref
 
         state["version"] = before["version"] + 1
         state["parent_version"] = before["version"]

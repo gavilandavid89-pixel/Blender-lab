@@ -143,11 +143,13 @@ jobs:
           test -s artifacts/stlat-world3d-motion-validation.json
           test -s artifacts/stlat-world3d-camera-isolation.json
           test -s artifacts/stlat-world3d-determinism.json
+          test -s artifacts/stlat-world-state-replay.json
           file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
           cat artifacts/stlat-world3d-manifest.json
           cat artifacts/stlat-world3d-motion-validation.json
           cat artifacts/stlat-world3d-camera-isolation.json
           cat artifacts/stlat-world3d-determinism.json
+          cat artifacts/stlat-world-state-replay.json
 
       - name: Publish scene, renders and diagnostics
         if: always()

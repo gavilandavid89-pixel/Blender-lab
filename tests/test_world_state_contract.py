@@ -224,6 +224,36 @@ class WorldEventReplayTests(unittest.TestCase):
         with self.assertRaisesRegex(self.ReplayError, "invalid initial snapshot"):
             self.replay_events(invalid, [])
 
+    def test_approved_role_change_replays_with_matching_old_and_new_role(self):
+        event = self.event("evt-role", "entity_role_change_approved", "char.001",
+                           previous_role="character", new_role="character.hero")
+        result = self.replay_events(self.initial, [event])
+        self.assertEqual("character.hero", result["entities"][1]["role"])
+        self.assertEqual(2, result["version"])
+
+    def test_approved_identity_change_replays_ref_and_signature(self):
+        event = self.event("evt-identity", "identity_change_approved", "char.001",
+                           previous_identity_ref="identity.goku", new_identity_ref="identity.vegeta",
+                           changed_identity_attributes=["identity_signature"],
+                           payload={"attributes": {"identity_signature": "sig-002"}})
+        result = self.replay_events(self.initial, [event])
+        self.assertEqual("identity.vegeta", result["entities"][1]["identity_ref"])
+        self.assertEqual("sig-002", result["entities"][1]["attributes"]["identity_signature"])
+        self.assertEqual([], contract.validate_state(result))
+
+    def test_identity_replay_rejects_wrong_previous_reference(self):
+        event = self.event("evt-identity-wrong-old", "identity_change_approved", "char.001",
+                           previous_identity_ref="identity.piccolo", new_identity_ref="identity.vegeta")
+        with self.assertRaisesRegex(self.ReplayError, "previous_identity_ref"):
+            self.replay_events(self.initial, [event])
+
+    def test_identity_replay_rejects_unlisted_attribute_mutation(self):
+        event = self.event("evt-identity-unlisted", "identity_change_approved", "char.001",
+                           previous_identity_ref="identity.goku", new_identity_ref="identity.goku",
+                           payload={"attributes": {"identity_signature": "sig-002"}})
+        with self.assertRaisesRegex(self.ReplayError, "exactly match"):
+            self.replay_events(self.initial, [event])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

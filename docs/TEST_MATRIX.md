@@ -20,7 +20,7 @@ La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
-La ejecución completa más reciente verificada es [run 38964959560](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38964959560) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
+La ejecución completa más reciente verificada es [run 38966075154](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38966075154) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
 
 ## 2. Matriz actual
 
@@ -51,7 +51,7 @@ La ejecución completa más reciente verificada es [run 38964959560](https://git
 | T-023 | Entidad aparece/desaparece sin evento aprobado | `validate_transition` | Pruebas de ciclo de vida de entidades | Los eventos son datos declarados; la autorización externa aún no está conectada |
 | T-024 | IDs o transformaciones cambian entre dos builds idénticos | `scripts/validate_deterministic_manifest.py` + segunda construcción Blender sin render | `stlat-world3d-determinism.json` | Comprueba metadatos semánticos y espaciales exportados |
 | T-025 | Geometría cambia manteniendo ID y límites similares | Hash SHA-256 canonizado de vértices, aristas y caras evaluados | `mesh_geometry_sha256` y `stlat-world3d-determinism.json` | No compara materiales, texturas, rig/animación ni píxeles de render |
-| T-026 | Replay con evento no aprobado, desconocido o con estado espacial inválido | `scripts/world_state_replay.py` + `tests/test_world_state_contract.py` | `artifacts/stlat-world-state-replay.json` y pruebas unitarias | Replay en memoria; no es autorización criptográfica ni persistencia de base de datos |
+| T-026 | Replay de transformaciones, creación/eliminación, rol e identidad; rechazar eventos no aprobados o contradictorios | `scripts/world_state_replay.py` + `tests/test_world_state_contract.py` | `artifacts/stlat-world-state-replay.json` y pruebas unitarias | Replay en memoria; no es autorización criptográfica ni persistencia de base de datos |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
@@ -61,7 +61,7 @@ La ejecución completa más reciente verificada es [run 38964959560](https://git
 | F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Parcial: builds deterministas conservan IDs y transforms; no existe todavía registro persistente de assets/identidades entre cambios intencionales |
 | F-003 | Aplicar una orden explícita que contradice un default y demostrar que gana la orden, registrando el conflicto | Pendiente; contrato documentado, motor M15 no implementado |
 | F-004 | Prompt sin muebles/armas/vehículos: comprobar que no aparecen entidades implícitas | Pendiente; el perfil declara prohibiciones, no hay compilador de prompt integrado |
-| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay determinista en memoria para creación/eliminación/transformación, con evidencia JSON y pruebas negativas; falta persistencia, replay completo de identidad/relaciones y reconciliación con Blender |
+| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay determinista en memoria para creación/eliminación/transformación/rol/identidad con evidencia JSON; falta persistencia, relaciones y reconciliación con Blender |
 | F-006 | Misma identidad en varias cámaras/tiempos sin cambiar proporciones ni ID | Pendiente; el personaje actual es proxy |
 | F-007 | Colisiones con cápsulas o volúmenes continuos y prueba de movimiento rápido | Pendiente; el validador actual usa AABB muestreada |
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |

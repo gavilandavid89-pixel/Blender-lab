@@ -73,7 +73,7 @@ def run_self_test(output_path: Path) -> dict:
         "checks": checks, "event_count": len(events), "final_version": final_state["version"],
         "final_state_sha256": hashlib.sha256(canonical_state_json(final_state).encode("utf-8")).hexdigest(),
         "limitations": [
-            "Only entity_created, entity_removed, and transform_updated are supported.",
+            "Supported events: entity_created, entity_removed, transform_updated, entity_role_change_approved, identity_change_approved.",
             "Approval is an explicit event field, not cryptographic authorization.",
             "Replay is an in-memory JSON operation; it does not mutate Blender scenes or persist a database.",
         ],
