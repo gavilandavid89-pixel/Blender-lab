@@ -89,11 +89,17 @@ safe_violations = sample_path(start, safe_end)
 bed_path_violations = sample_path(start, bed_target)
 outside_result = evaluate_position(outside_target)
 
+bed_collision_hits = [
+    hit for sample in bed_path_violations for hit in sample["collisions"]
+    if hit["obstacle"].startswith("Bed.")
+]
+start_result = evaluate_position(start)
 checks = {
     "character_parts_found": len(parts) >= 7,
+    "initial_pose_is_valid": start_result["inside_room"] and not start_result["collisions"],
     "safe_path_is_collision_free": len(safe_violations) == 0,
-    "bed_path_collision_detected": any(v["collisions"] for v in bed_path_violations),
-    "room_boundary_violation_detected": not outside_result["inside_room"],
+    "bed_path_hits_bed_geometry": len(bed_collision_hits) > 0,
+    "room_boundary_violation_detected": not outside_result["inside_room"] and len(outside_result["outside_parts"]) > 0,
 }
 checks["status"] = "success" if all(checks.values()) else "failed"
 report = {
@@ -123,6 +129,8 @@ report = {
     "checks": checks,
     "obstacle_count": len(obstacles),
     "character_part_count": len(parts),
+    "initial_pose_collisions": start_result["collisions"][:5],
+    "bed_geometry_collision_hits": len(bed_collision_hits),
 }
 with open(REPORT, "w", encoding="utf-8") as f:
     json.dump(report, f, indent=2)
@@ -131,6 +139,8 @@ print("STLAT_MOTION_VALIDATION=" + json.dumps({
     "character_part_count": len(parts), "obstacle_count": len(obstacles),
     "safe_path_violations": len(safe_violations),
     "bed_path_violations": len(bed_path_violations),
+    "bed_geometry_collision_hits": len(bed_collision_hits),
+    "initial_pose_collisions": start_result["collisions"][:5],
     "report": REPORT,
 }))
 if checks["status"] != "success":
