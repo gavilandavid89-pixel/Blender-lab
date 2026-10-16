@@ -16,7 +16,7 @@ python3 scripts/validate_deterministic_manifest.py --self-test
 python3 -m unittest discover -s tests -v
 ```
 
-La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento y manifiesto, compara IDs/transformaciones entre dos builds independientes, prueba el aislamiento de cámara sobre la escena guardada y publica el artefacto `stlat-world3d-output`.
+La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento y manifiesto, compara IDs, transforms y hashes de malla entre dos builds independientes, prueba el aislamiento de cámara sobre la escena guardada y publica el artefacto `stlat-world3d-output`.
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 

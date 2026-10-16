@@ -2,6 +2,7 @@ import bpy
 import json
 import math
 import os
+import hashlib
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.getcwd())
@@ -167,6 +168,25 @@ for obj in sorted(scene.objects, key=lambda o: o.name):
     corners = [evaluated.matrix_world @ Vector(corner) for corner in evaluated.bound_box]
     minimum = [round(min(v[i] for v in corners), 4) for i in range(3)] if corners else None
     maximum = [round(max(v[i] for v in corners), 4) for i in range(3)] if corners else None
+    mesh_vertex_count = 0
+    mesh_edge_count = 0
+    mesh_polygon_count = 0
+    mesh_geometry_sha256 = None
+    if obj.type == "MESH":
+        mesh = evaluated.to_mesh()
+        try:
+            geometry = {
+                "vertices": [[round(float(c), 6) for c in vertex.co] for vertex in mesh.vertices],
+                "edges": [sorted(int(index) for index in edge.vertices) for edge in mesh.edges],
+                "polygons": [[int(index) for index in polygon.vertices] for polygon in mesh.polygons],
+            }
+            mesh_vertex_count = len(mesh.vertices)
+            mesh_edge_count = len(mesh.edges)
+            mesh_polygon_count = len(mesh.polygons)
+            encoded_geometry = json.dumps(geometry, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+            mesh_geometry_sha256 = hashlib.sha256(encoded_geometry).hexdigest()
+        finally:
+            evaluated.to_mesh_clear()
     records.append({
         "id": obj.get("stlat_id", obj.name.lower().replace(" ", "_")),
         "name": obj.name,
@@ -176,6 +196,10 @@ for obj in sorted(scene.objects, key=lambda o: o.name):
         "rotation_euler_rad": [round(float(v), 5) for v in obj.rotation_euler],
         "dimensions": [round(float(v), 4) for v in obj.dimensions],
         "aabb_world": {"min": minimum, "max": maximum},
+        "mesh_vertex_count": mesh_vertex_count,
+        "mesh_edge_count": mesh_edge_count,
+        "mesh_polygon_count": mesh_polygon_count,
+        "mesh_geometry_sha256": mesh_geometry_sha256,
     })
 
 def inside_room(obj):

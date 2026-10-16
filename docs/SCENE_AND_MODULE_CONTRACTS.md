@@ -134,3 +134,8 @@ Las pruebas están en `tests/test_world_state_contract.py`. Esto es una **capa d
 ## 9. Prueba ejecutable de aislamiento de cámara
 
 `scripts/world3d_validate_camera_isolation.py` abre la escena guardada desde el workflow, registra las firmas de todos los objetos no cámara, modifica posición/rotación/lente de `Camera.Main`, alterna la cámara activa y vuelve a comparar transformaciones, dimensiones y hash de vértices de malla evaluados en coordenadas de mundo. Escribe `artifacts/stlat-world3d-camera-isolation.json`; el validador independiente `scripts/validate_camera_isolation_report.py` comprueba la evidencia. La escena modificada no se guarda. Esta prueba detecta efectos colaterales de las operaciones probadas, pero no es un sistema de permisos que impida que un script externo cambie objetos.
+
+
+## 10. Huella reproducible de geometría
+
+Cada registro de malla del manifiesto `stlat.world3d.v1` incluye cantidades de vértices/aristas/polígonos y `mesh_geometry_sha256`, calculado sobre la geometría evaluada de Blender en coordenadas locales, con coordenadas redondeadas a seis decimales. La comparación de builds independientes incluye esta huella, de modo que un cambio de topología o forma no pase inadvertido solo porque el ID, la transformación o el AABB se mantengan. No es una huella de materiales, rig, texturas ni píxeles renderizados.

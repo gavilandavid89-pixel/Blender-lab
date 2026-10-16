@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIRST = ROOT / "artifacts/stlat-world3d-manifest-first-build.json"
 SECOND = ROOT / "artifacts/stlat-world3d-manifest.json"
 REPORT = ROOT / "artifacts/stlat-world3d-determinism.json"
-ENTITY_FIELDS = ("id", "name", "type", "role", "location", "rotation_euler_rad", "dimensions", "aabb_world")
+ENTITY_FIELDS = ("id", "name", "type", "role", "location", "rotation_euler_rad", "dimensions", "aabb_world", "mesh_vertex_count", "mesh_edge_count", "mesh_polygon_count", "mesh_geometry_sha256")
 
 def index_manifest(data: Any, label: str) -> tuple[dict[str, dict[str, Any]], list[str]]:
     errors: list[str] = []
@@ -110,7 +110,7 @@ def validate_report(data: Any) -> list[str]:
 def self_test() -> None:
     obj = {"id": "character.head", "name": "Character.Head", "type": "MESH", "role": "character.head",
            "location": [0, 0, 1], "rotation_euler_rad": [0, 0, 0], "dimensions": [0.4, 0.4, 0.4],
-           "aabb_world": {"min": [-0.2, -0.2, 0.8], "max": [0.2, 0.2, 1.2]}}
+           "aabb_world": {"min": [-0.2, -0.2, 0.8], "max": [0.2, 0.2, 1.2]},\n           "mesh_vertex_count": 12, "mesh_edge_count": 18, "mesh_polygon_count": 8, "mesh_geometry_sha256": "abc123"}
     base = {"schema": "stlat.world3d.v1", "status": "success", "object_count": 1, "objects": [obj]}
     good = compare_manifests(base, copy.deepcopy(base))
     if validate_report(good):
@@ -120,13 +120,18 @@ def self_test() -> None:
     bad = compare_manifests(base, changed)
     if bad["status"] != "failed" or not bad["changed_objects"]:
         raise SystemExit("SELF_TEST_FAIL: transform drift not detected")
+    shape_changed = copy.deepcopy(base)
+    shape_changed["objects"][0]["mesh_geometry_sha256"] = "different-hash"
+    bad_shape = compare_manifests(base, shape_changed)
+    if bad_shape["status"] != "failed" or "mesh_geometry_sha256" not in bad_shape["changed_objects"][0]["fields"]:
+        raise SystemExit("SELF_TEST_FAIL: mesh geometry drift not detected")
     duplicate = copy.deepcopy(base)
     duplicate["objects"].append(copy.deepcopy(obj))
     duplicate["object_count"] = 2
     bad_duplicate = compare_manifests(duplicate, duplicate)
     if not bad_duplicate["errors"]:
         raise SystemExit("SELF_TEST_FAIL: duplicate IDs not rejected")
-    print("DETERMINISTIC_MANIFEST_SELF_TEST=PASS (identical builds accepted; transform drift and duplicate IDs rejected)")
+    print("DETERMINISTIC_MANIFEST_SELF_TEST=PASS (identical builds accepted; transform/mesh drift and duplicate IDs rejected)")
 
 def main() -> None:
     if "--self-test" in sys.argv:
