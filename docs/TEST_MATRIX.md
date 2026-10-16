@@ -20,7 +20,9 @@ La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
-La ejecución completa más reciente verificada es [run 38964496099](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38964496099) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.\n\n## 2. Matriz actual
+La ejecución completa más reciente verificada es [run 38964496099](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38964496099) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
+
+## 2. Matriz actual
 
 | ID | Riesgo / contrato | Prueba automatizada actual | Evidencia | Límite conocido |
 |---|---|---|---|---|
@@ -46,7 +48,9 @@ La ejecución completa más reciente verificada es [run 38964496099](https://git
 | T-020 | Identidad o firma de apariencia cambia sin aprobación | `validate_transition` + pruebas positivas/negativas | Rechazo de cambios protegidos no aprobados | No analiza imágenes ni determina identidad visual real |
 | T-021 | Salto de versión o parent_version incorrecto | `validate_transition` | Linaje de versiones | No guarda snapshots en una base de datos |
 | T-022 | Cambio de cámara muta entidades del mundo | `validate_camera_isolation` | Rechaza cualquier diferencia en entidades no cámara | Prueba estados JSON; todavía no intercepta cambios dentro de Blender |
-| T-023 | Entidad aparece/desaparece sin evento aprobado | `validate_transition` | Pruebas de ciclo de vida de entidades | Los eventos son datos declarados; la autorización externa aún no está conectada |\n| T-024 | IDs o transformaciones cambian entre dos builds idénticos | `scripts/validate_deterministic_manifest.py` + segunda construcción Blender sin render | `stlat-world3d-determinism.json` | Comprueba metadatos semánticos y espaciales exportados |\n| T-025 | Geometría cambia manteniendo ID y límites similares | Hash SHA-256 canonizado de vértices, aristas y caras evaluados | `mesh_geometry_sha256` y `stlat-world3d-determinism.json` | No compara materiales, texturas, rig/animación ni píxeles de render |
+| T-023 | Entidad aparece/desaparece sin evento aprobado | `validate_transition` | Pruebas de ciclo de vida de entidades | Los eventos son datos declarados; la autorización externa aún no está conectada |
+| T-024 | IDs o transformaciones cambian entre dos builds idénticos | `scripts/validate_deterministic_manifest.py` + segunda construcción Blender sin render | `stlat-world3d-determinism.json` | Comprueba metadatos semánticos y espaciales exportados |
+| T-025 | Geometría cambia manteniendo ID y límites similares | Hash SHA-256 canonizado de vértices, aristas y caras evaluados | `mesh_geometry_sha256` y `stlat-world3d-determinism.json` | No compara materiales, texturas, rig/animación ni píxeles de render |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
@@ -62,9 +66,8 @@ La ejecución completa más reciente verificada es [run 38964496099](https://git
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |
 | F-009 | Registrar origen y confianza de cada valor: explícito, aprobado, default, inferido o desconocido | Pendiente; ledger M15 no implementado |
 | F-010 | Reparación limitada que nunca relaje restricciones superiores para “pasar” | Pendiente; M11 es diseño |
-| F-011 | Repetición limpia de CI con todos los tests rápidos y Blender en verde | Debe verificarse después de estos cambios |
+| F-011 | Repetición limpia de CI con todos los tests rápidos y Blender en verde | Verificado en [run 38964496099](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38964496099) |
 
-| F-012 | Dos builds idénticos conservan IDs y transforms exportados | Debe verificarse después de estos cambios |
 
 ## 4. Criterio de aprobación
 
