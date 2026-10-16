@@ -111,7 +111,7 @@ La plantilla solo decide valores de presentación. No puede añadir sujetos, uti
 - protege `identity_ref`, `identity_signature`, `asset_id` y `appearance_id` contra cambios silenciosos;
 - comprueba que una operación marcada como «solo cámara» cambie una cámara y no altere ninguna entidad no cámara.
 
-Las pruebas están en `tests/test_world_state_contract.py`. Esto es una **capa de contrato sobre snapshots JSON**, no todavía el módulo M03/M07 integrado: no almacena estado, no hace replay de eventos y no puede impedir que otro proceso cambie directamente una escena de Blender. Un evento aprobado se trata como evidencia declarada; la autorización real todavía debe conectarse.
+Las pruebas están en `tests/test_world_state_contract.py`. `scripts/world_state_replay.py` implementa replay determinista en memoria para `entity_created`, `entity_removed` y `transform_updated`: cada evento aprobado crea una versión enlazada, actualiza el timestamp, valida la transición y rechaza operaciones desconocidas o inconsistentes. `scripts/validate_world_replay.py` ejecuta pruebas positivas/negativas y guarda `artifacts/stlat-world-state-replay.json`.\n\nEsta es una **primera capa de replay sobre snapshots JSON**, no todavía el módulo M03/M12 integrado: no persiste snapshots, no reproduce aún eventos de identidad/relaciones ni sincroniza cambios con una escena Blender. El campo `approved` es evidencia declarada, no autorización criptográfica; el sistema de permisos real todavía debe conectarse.
 
 ## 9. Qué está probado hoy
 

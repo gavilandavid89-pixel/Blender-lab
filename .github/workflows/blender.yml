@@ -39,6 +39,9 @@ jobs:
       - name: Self-test motion report validator
         run: python3 scripts/validate_motion_report.py --self-test
 
+      - name: Self-test world event replay
+        run: python3 scripts/validate_world_replay.py
+
       - name: Self-test deterministic manifest validator
         run: python3 scripts/validate_deterministic_manifest.py --self-test
 

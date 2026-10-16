@@ -14,7 +14,7 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 - `stlat-world3d-manifest.json`: contrato del mundo, ejes, unidades, roles, transformaciones, AABB y validaciones estructurales.
 - `stlat-world3d-motion-validation.json`: resultado de pruebas de recorrido seguro, colisión deliberada con la cama y salida deliberada de los límites.
 - `stlat-world3d-camera-isolation.json`: evidencia de una prueba sobre la escena guardada que cambia cámara, transformación y lente y compara transformaciones y geometría evaluada de todos los objetos no cámara.
-- `stlat-world3d-determinism.json`: comparación de dos construcciones independientes del mundo para verificar IDs, roles, transformaciones, dimensiones, AABB y hashes de geometría de malla estables.
+- `stlat-world3d-determinism.json`: comparación de dos construcciones independientes del mundo para verificar IDs, roles, transformaciones, dimensiones, AABB y hashes de geometría de malla estables.\n- `stlat-world-state-replay.json`: evidencia de replay de eventos aprobados, linaje de versiones, rechazo de eventos no aprobados y protección de la entrada.
 - `blender.log`: registro de ejecución.
 
 ## Contrato espacial inicial
@@ -76,7 +76,7 @@ El artefacto `stlat-world3d-output` contiene la escena, las imágenes y los info
 - Colisiones de geometría más precisas y cuerpo del personaje como volumen coherente.
 - Caminos con obstáculos y navegación de varias etapas.
 - Rig/esqueleto, identidad del personaje y memoria entre tomas.
-- Referencias por fotograma (profundidad, silueta, posición y cámara).
+- Replay completo de eventos de identidad/relaciones y persistencia del estado del mundo.\n- Referencias por fotograma (profundidad, silueta, posición y cámara).
 - Comparación automática de fotogramas generados contra el estado del mundo y detección de desviaciones.
 
 No se considera implementada ninguna de estas capacidades hasta que tenga pruebas reproducibles.
