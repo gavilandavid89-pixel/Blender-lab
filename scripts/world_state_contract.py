@@ -97,6 +97,12 @@ def validate_state(state: Any) -> list[str]:
                 errors.append(f"{prefix}.bounds min/max must be finite vector3 values")
             elif any(eb["min"][i] > eb["max"][i] for i in range(3)):
                 errors.append(f"{prefix}.bounds min must not exceed max")
+            elif (isinstance(bounds, dict) and _vector3(bounds.get("min")) and _vector3(bounds.get("max"))
+                  and not any(bounds["min"][i] > bounds["max"][i] for i in range(3))
+                  and isinstance(entity.get("role"), str)
+                  and not entity["role"].lower().startswith("camera")
+                  and any(eb["min"][i] < bounds["min"][i] or eb["max"][i] > bounds["max"][i] for i in range(3))):
+                errors.append(f"{prefix}.bounds exceed hard world bounds")
             if eb.get("kind") not in BOUND_KINDS:
                 errors.append(f"{prefix}.bounds.kind is unsupported")
         if entity.get("persistence") not in PERSISTENCE:

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://st-lat.invalid/schemas/world-state.v1.schema.json",
   "title": "ST-LAT World State v1",
-  "description": "Contrato inicial para describir un mundo persistente. Coordenadas y dimensiones en metros.",
+  "description": "Contrato inicial para describir un mundo persistente. Coordenadas y dimensiones en metros. Los bounds globales son límites duros; los bounds de entidades físicas deben estar contenidos en ellos. Las cámaras pueden situarse fuera del volumen físico.",
   "type": "object",
   "required": [
     "schema",

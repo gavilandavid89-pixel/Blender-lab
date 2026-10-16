@@ -20,7 +20,7 @@ La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
-La ejecución completa más reciente verificada es [run 38966564133](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38966564133) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
+La ejecución completa más reciente verificada es [run 38967100806](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38967100806) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
 
 ## 2. Matriz actual
 
@@ -52,6 +52,7 @@ La ejecución completa más reciente verificada es [run 38966564133](https://git
 | T-024 | IDs o transformaciones cambian entre dos builds idénticos | `scripts/validate_deterministic_manifest.py` + segunda construcción Blender sin render | `stlat-world3d-determinism.json` | Comprueba metadatos semánticos y espaciales exportados |
 | T-025 | Geometría cambia manteniendo ID y límites similares | Hash SHA-256 canonizado de vértices, aristas y caras evaluados | `mesh_geometry_sha256` y `stlat-world3d-determinism.json` | No compara materiales, texturas, rig/animación ni píxeles de render |
 | T-026 | Replay de transformaciones, creación/eliminación, rol e identidad; rechazar eventos no aprobados o contradictorios | `scripts/world_state_replay.py` + `tests/test_world_state_contract.py` | `artifacts/stlat-world-state-replay.json` y pruebas unitarias | Replay en memoria; no es autorización criptográfica ni persistencia de base de datos |
+| T-027 | Entidad física cruza los límites duros del mundo | `validate_state` + regresiones positivas/negativas y replay | Error `bounds exceed hard world bounds` | Cámaras excluidas explícitamente porque pueden estar fuera del volumen físico |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 

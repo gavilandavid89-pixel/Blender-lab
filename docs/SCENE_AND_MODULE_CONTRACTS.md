@@ -105,7 +105,7 @@ La plantilla solo decide valores de presentación. No puede añadir sujetos, uti
 
 `scripts/world_state_contract.py` implementa validaciones puras, sin dependencias externas, para snapshots `stlat.world-state.v1`:
 
-- valida unidades, ejes, bounds, vectores finitos, escala positiva e IDs únicos;
+- valida unidades, ejes, bounds, vectores finitos, escala positiva e IDs únicos; los bounds de entidades no cámara deben permanecer dentro de los límites duros del mundo;
 - exige linaje de versión contiguo (`version = parent.version + 1`);
 - exige eventos explícitos aprobados para crear/eliminar entidades;
 - protege `identity_ref`, `identity_signature`, `asset_id` y `appearance_id` contra cambios silenciosos;

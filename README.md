@@ -22,7 +22,7 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 - Unidades: metros.
 - Ejes: X = derecha, Y = profundidad (positivo hacia la pared del fondo), Z = arriba.
 - Habitación interior: X/Y entre -4 y 4; Z entre 0 y 3.2.
-- Cada objeto tiene un rol semántico y un identificador.
+- Cada objeto tiene un rol semántico y un identificador. Los bounds de entidades físicas deben permanecer dentro de los límites duros del mundo; las cámaras pueden situarse fuera.
 - El personaje es por ahora un proxy geométrico segmentado, no un rig ni una identidad final.
 
 ## Validación de movimiento

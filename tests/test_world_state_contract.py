@@ -258,6 +258,25 @@ class WorldEventReplayTests(unittest.TestCase):
         with self.assertRaisesRegex(self.ReplayError, "exactly match"):
             self.replay_events(self.initial, [event])
 
+    def test_entity_bounds_outside_world_are_rejected(self):
+        data = snapshot()
+        data["entities"][1]["bounds"]["min"][0] = -5.0
+        self.assertTrue(any("exceed hard world bounds" in e for e in contract.validate_state(data)))
+
+    def test_camera_bounds_may_extend_outside_world(self):
+        data = snapshot()
+        data["entities"][2]["bounds"] = {
+            "min": [-20.0, -20.0, -20.0], "max": [20.0, 20.0, 20.0], "kind": "aabb"}
+        self.assertEqual([], contract.validate_state(data))
+
+    def test_replay_rejects_entity_moved_outside_world_bounds(self):
+        event = self.event("evt-outside-world", "transform_updated", "char.001", payload={
+            "transform": {"position": [5.0, 0.0, 0.0], "rotation_euler_rad": [0.0, 0.0, 0.0],
+                          "scale": [1.0, 1.0, 1.0]},
+            "bounds": {"min": [4.5, -0.5, 0.0], "max": [5.5, 0.5, 2.0], "kind": "aabb"}})
+        with self.assertRaisesRegex(self.ReplayError, "hard world bounds"):
+            self.replay_events(self.initial, [event])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
