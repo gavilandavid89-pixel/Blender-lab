@@ -1,0 +1,76 @@
+{
+  "schema": "stlat.scene-profile.v1",
+  "profile_id": "neutral_studio",
+  "version": 1,
+  "purpose": "general_fallback",
+  "environment": {
+    "template": "neutral_studio",
+    "units": "meters",
+    "deterministic": true,
+    "seed": 1729,
+    "world_bounds": {
+      "min": [
+        -5,
+        -5,
+        0
+      ],
+      "max": [
+        5,
+        5,
+        4
+      ]
+    }
+  },
+  "defaults": {
+    "lighting": "soft_diffuse",
+    "materials": "neutral_matte",
+    "motion": "idle",
+    "props_policy": "no_unrequested_narrative_entities",
+    "background": "continuous_neutral_grey",
+    "camera_preset": "three_quarter_reference",
+    "exposure": 0,
+    "frame_rate": 24,
+    "resolution": {
+      "width": 960,
+      "height": 540
+    }
+  },
+  "layers": [
+    "world_static",
+    "props_persistent",
+    "characters",
+    "motion_targets",
+    "camera_rigs",
+    "lighting",
+    "debug",
+    "ephemeral_fx"
+  ],
+  "forbidden_implicit_entities": [
+    "weapons",
+    "vehicles",
+    "pets",
+    "additional_characters",
+    "furniture",
+    "logos",
+    "text",
+    "weather_effects",
+    "story_props"
+  ],
+  "camera_policy": {
+    "world_transform_isolation": true,
+    "inspection_views": [
+      "front",
+      "three_quarter",
+      "side",
+      "topdown"
+    ],
+    "debug_layer_in_final": false,
+    "lens_mm": 50
+  },
+  "selection": {
+    "priority": 4,
+    "selected_because": "Fallback general cuando no existe perfil aprobado ni entorno explícito",
+    "approved_by_user": false,
+    "source": "template_default"
+  }
+}
