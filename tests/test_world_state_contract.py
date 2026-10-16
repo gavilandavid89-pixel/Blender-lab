@@ -293,6 +293,54 @@ class WorldEventReplayTests(unittest.TestCase):
 
 
 
+    def test_valid_parent_child_hierarchy_passes(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "room.floor"
+        self.assertEqual([], contract.validate_state(data))
+
+    def test_missing_parent_reference_is_rejected(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "entity.missing"
+        self.assertTrue(any("references missing parent" in e for e in contract.validate_state(data)))
+
+    def test_entity_cannot_parent_itself(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "char.001"
+        self.assertTrue(any("cannot be its own parent" in e for e in contract.validate_state(data)))
+
+    def test_parent_hierarchy_cycle_is_rejected(self):
+        data = snapshot()
+        data["entities"][0]["parent_id"] = "char.001"
+        data["entities"][1]["parent_id"] = "room.floor"
+        self.assertTrue(any("parent hierarchy contains a cycle" in e for e in contract.validate_state(data)))
+
+    def test_parent_change_requires_matching_approved_event(self):
+        before = snapshot()
+        after = snapshot(2, before["entities"])
+        after["entities"][1]["parent_id"] = "room.floor"
+        self.assertTrue(any("parent changed without matching approved event" in e
+                            for e in contract.validate_transition(before, after)))
+
+    def test_approved_parent_change_replays(self):
+        event = self.event("evt-parent", "entity_parent_change_approved", "char.001",
+                           previous_parent_id=None, new_parent_id="room.floor")
+        result = self.replay_events(self.initial, [event])
+        self.assertEqual("room.floor", result["entities"][1]["parent_id"])
+        self.assertEqual([], contract.validate_state(result))
+
+    def test_parent_replay_rejects_cycle(self):
+        event = self.event("evt-parent-cycle", "entity_parent_change_approved", "room.floor",
+                           previous_parent_id=None, new_parent_id="char.001")
+        with self.assertRaisesRegex(self.ReplayError, "parent hierarchy contains a cycle"):
+            self.replay_events(self.initial, [event])
+
+    def test_parent_replay_rejects_wrong_previous_parent(self):
+        event = self.event("evt-parent-wrong-old", "entity_parent_change_approved", "char.001",
+                           previous_parent_id="prop.table", new_parent_id="room.floor")
+        with self.assertRaisesRegex(self.ReplayError, "previous_parent_id"):
+            self.replay_events(self.initial, [event])
+
+
 class WorldStateStoreTests(unittest.TestCase):
     def setUp(self):
         import tempfile
@@ -373,52 +421,6 @@ class WorldStateStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(self.StoreError, "missing versions"):
             store.load_latest("world-alpha")
 
-    def test_valid_parent_child_hierarchy_passes(self):
-        data = snapshot()
-        data["entities"][1]["parent_id"] = "room.floor"
-        self.assertEqual([], contract.validate_state(data))
-
-    def test_missing_parent_reference_is_rejected(self):
-        data = snapshot()
-        data["entities"][1]["parent_id"] = "entity.missing"
-        self.assertTrue(any("references missing parent" in e for e in contract.validate_state(data)))
-
-    def test_entity_cannot_parent_itself(self):
-        data = snapshot()
-        data["entities"][1]["parent_id"] = "char.001"
-        self.assertTrue(any("cannot be its own parent" in e for e in contract.validate_state(data)))
-
-    def test_parent_hierarchy_cycle_is_rejected(self):
-        data = snapshot()
-        data["entities"][0]["parent_id"] = "char.001"
-        data["entities"][1]["parent_id"] = "room.floor"
-        self.assertTrue(any("parent hierarchy contains a cycle" in e for e in contract.validate_state(data)))
-
-    def test_parent_change_requires_matching_approved_event(self):
-        before = snapshot()
-        after = snapshot(2, before["entities"])
-        after["entities"][1]["parent_id"] = "room.floor"
-        self.assertTrue(any("parent changed without matching approved event" in e
-                            for e in contract.validate_transition(before, after)))
-
-    def test_approved_parent_change_replays(self):
-        event = self.event("evt-parent", "entity_parent_change_approved", "char.001",
-                           previous_parent_id=None, new_parent_id="room.floor")
-        result = self.replay_events(self.initial, [event])
-        self.assertEqual("room.floor", result["entities"][1]["parent_id"])
-        self.assertEqual([], contract.validate_state(result))
-
-    def test_parent_replay_rejects_cycle(self):
-        event = self.event("evt-parent-cycle", "entity_parent_change_approved", "room.floor",
-                           previous_parent_id=None, new_parent_id="char.001")
-        with self.assertRaisesRegex(self.ReplayError, "parent hierarchy contains a cycle"):
-            self.replay_events(self.initial, [event])
-
-    def test_parent_replay_rejects_wrong_previous_parent(self):
-        event = self.event("evt-parent-wrong-old", "entity_parent_change_approved", "char.001",
-                           previous_parent_id="prop.table", new_parent_id="room.floor")
-        with self.assertRaisesRegex(self.ReplayError, "previous_parent_id"):
-            self.replay_events(self.initial, [event])
 
 
 if __name__ == "__main__":
