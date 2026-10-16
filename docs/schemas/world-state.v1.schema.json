@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://st-lat.invalid/schemas/world-state.v1.schema.json",
+  "title": "ST-LAT World State v1",
+  "description": "Contrato inicial para describir un mundo persistente. Coordenadas y dimensiones en metros.",
+  "type": "object",
+  "required": [
+    "schema",
+    "world_id",
+    "version",
+    "units",
+    "axes",
+    "bounds",
+    "timestamp",
+    "entities"
+  ],
+  "properties": {
+    "schema": {
+      "const": "stlat.world-state.v1"
+    },
+    "world_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parent_version": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "units": {
+      "const": "meters"
+    },
+    "axes": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "const": "right"
+        },
+        "y": {
+          "const": "depth_positive_toward_back_wall"
+        },
+        "z": {
+          "const": "up"
+        }
+      },
+      "additionalProperties": false
+    },
+    "bounds": {
+      "type": "object",
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "$ref": "#/$defs/vector3"
+        },
+        "max": {
+          "$ref": "#/$defs/vector3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "timestamp": {
+      "type": "number",
+      "minimum": 0
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      },
+      "default": []
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "prompt_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "entity": {
+      "type": "object",
+      "required": [
+        "id",
+        "role",
+        "transform",
+        "bounds",
+        "persistence",
+        "collision"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "required": [
+            "position",
+            "rotation_euler_rad",
+            "scale"
+          ],
+          "properties": {
+            "position": {
+              "$ref": "#/$defs/vector3"
+            },
+            "rotation_euler_rad": {
+              "$ref": "#/$defs/vector3"
+            },
+            "scale": {
+              "$ref": "#/$defs/vector3"
+            }
+          },
+          "additionalProperties": false
+        },
+        "bounds": {
+          "type": "object",
+          "required": [
+            "min",
+            "max",
+            "kind"
+          ],
+          "properties": {
+            "min": {
+              "$ref": "#/$defs/vector3"
+            },
+            "max": {
+              "$ref": "#/$defs/vector3"
+            },
+            "kind": {
+              "enum": [
+                "aabb",
+                "obb",
+                "capsule",
+                "convex_hull",
+                "mesh"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "persistence": {
+          "enum": [
+            "static",
+            "dynamic",
+            "ephemeral"
+          ]
+        },
+        "collision": {
+          "enum": [
+            "solid",
+            "trigger",
+            "none"
+          ]
+        },
+        "identity_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributes": {
+          "type": "object",
+          "default": {}
+        }
+      },
+      "additionalProperties": true
+    },
+    "event": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "timestamp",
+        "actor_id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "number",
+          "minimum": 0
+        },
+        "actor_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payload": {
+          "type": "object"
+        },
+        "source": {
+          "enum": [
+            "prompt",
+            "user_approved",
+            "simulation",
+            "system"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
