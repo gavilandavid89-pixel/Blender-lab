@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   render:
-    name: Build scene and render preview
+    name: Build world, test motion and render preview
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -41,10 +41,10 @@ jobs:
           echo "/tmp/blender-5.2.2-linux-x64" >> "$GITHUB_PATH"
           /tmp/blender-5.2.2-linux-x64/blender --version
 
-      - name: Run ST-LAT world generator with diagnostics and one retry
+      - name: Build world and run deterministic validation
         shell: bash
         run: |
-          set +e
+          set -uo pipefail
           mkdir -p artifacts
           BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
           export LIBGL_ALWAYS_SOFTWARE=1
@@ -52,18 +52,27 @@ jobs:
           "$BLENDER_BIN" --background --factory-startup --python scripts/world3d_probe.py 2>&1 | tee blender.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            echo "First Blender attempt failed with exit code $status" | tee -a blender.log
-            echo "Retrying once after clearing Blender user config and using software GL..." | tee -a blender.log
+            echo "First world build failed with exit code $status" | tee -a blender.log
+            echo "Retrying world build once with clean Blender user config..." | tee -a blender.log
             rm -rf /tmp/blender-user-config
             BLENDER_USER_CONFIG=/tmp/blender-user-config \
-              "$BLENDER_BIN" --background --factory-startup --python scripts/create_scene.py 2>&1 | tee -a blender.log
+              "$BLENDER_BIN" --background --factory-startup --python scripts/world3d_probe.py 2>&1 | tee -a blender.log
             status=${PIPESTATUS[0]}
           fi
           echo "$status" > artifacts/exit-code.txt
           if [ "$status" -ne 0 ]; then
-            echo "Blender failed after retry. Last log lines:" | tee -a blender.log
+            echo "World build failed after retry. Last log lines:" | tee -a blender.log
             tail -n 100 blender.log
             exit "$status"
+          fi
+
+          "$BLENDER_BIN" --background artifacts/stlat-world3d.blend --python scripts/world3d_validate_motion.py 2>&1 | tee -a blender.log
+          validation_status=${PIPESTATUS[0]}
+          echo "$validation_status" > artifacts/motion-validation-exit-code.txt
+          if [ "$validation_status" -ne 0 ]; then
+            echo "Motion/collision validation failed. Last log lines:" | tee -a blender.log
+            tail -n 100 blender.log
+            exit "$validation_status"
           fi
 
       - name: Validate output files
@@ -74,14 +83,16 @@ jobs:
           test -s artifacts/stlat-world3d-main.png
           test -s artifacts/stlat-world3d-topdown.png
           test -s artifacts/stlat-world3d-manifest.json
+          test -s artifacts/stlat-world3d-motion-validation.json
           file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
           cat artifacts/stlat-world3d-manifest.json
+          cat artifacts/stlat-world3d-motion-validation.json
 
-      - name: Publish scene, render and diagnostics
+      - name: Publish scene, renders and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: blender-lab-output
+          name: stlat-world3d-output
           path: |
             artifacts/
             blender.log
