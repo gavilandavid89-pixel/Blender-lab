@@ -14,6 +14,7 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 - `stlat-world3d-manifest.json`: contrato del mundo, ejes, unidades, roles, transformaciones, AABB y validaciones estructurales.
 - `stlat-world3d-motion-validation.json`: resultado de pruebas de recorrido seguro, colisión deliberada con la cama y salida deliberada de los límites.
 - `stlat-world3d-camera-isolation.json`: evidencia de una prueba sobre la escena guardada que cambia cámara, transformación y lente y compara transformaciones y geometría evaluada de todos los objetos no cámara.
+- `stlat-world3d-determinism.json`: comparación de dos construcciones independientes del mundo para verificar IDs, roles, transformaciones, dimensiones y AABB estables.
 - `blender.log`: registro de ejecución.
 
 ## Contrato espacial inicial
@@ -57,6 +58,7 @@ python3 scripts/validate_scene_profiles.py
 python3 scripts/validate_world_manifest.py --self-test
 python3 scripts/validate_motion_report.py --self-test
 python3 scripts/validate_camera_isolation_report.py --self-test
+python3 scripts/validate_deterministic_manifest.py --self-test
 python3 -m unittest discover -s tests -v
 # La suite incluye contratos de snapshots, continuidad de identidad y aislamiento de cámara
 ```

@@ -146,12 +146,15 @@ main_cam = make_camera("Camera.Main", (7.8, -10.5, 7.0), (0, 0, 1.2), 48)
 top_cam = make_camera("Camera.Top", (0, 0, 12.0), (0, 0, 0), 45)
 scene.camera = main_cam
 scene.render.filepath = os.path.join(OUT, "stlat-world3d-main.png")
-bpy.ops.render.render(write_still=True)
-scene.camera = top_cam
-scene.render.filepath = os.path.join(OUT, "stlat-world3d-topdown.png")
-scene.render.resolution_x = 800
-scene.render.resolution_y = 800
-bpy.ops.render.render(write_still=True)
+if os.environ.get("STLAT_SKIP_RENDER") != "1":
+    bpy.ops.render.render(write_still=True)
+    scene.camera = top_cam
+    scene.render.filepath = os.path.join(OUT, "stlat-world3d-topdown.png")
+    scene.render.resolution_x = 800
+    scene.render.resolution_y = 800
+    bpy.ops.render.render(write_still=True)
+else:
+    print("STLAT_SKIP_RENDER=1: skipping render pass for deterministic rebuild check")
 
 # Export stable, machine-readable world data after evaluating transforms.
 bpy.context.view_layer.update()

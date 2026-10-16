@@ -39,6 +39,9 @@ jobs:
       - name: Self-test motion report validator
         run: python3 scripts/validate_motion_report.py --self-test
 
+      - name: Self-test deterministic manifest validator
+        run: python3 scripts/validate_deterministic_manifest.py --self-test
+
       - name: Install Linux graphics runtime
         run: |
           sudo apt-get update
@@ -89,6 +92,18 @@ jobs:
             exit "$validation_status"
           fi
 
+      - name: Rebuild world without rendering and compare stable IDs
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
+          cp artifacts/stlat-world3d-manifest.json artifacts/stlat-world3d-manifest-first-build.json
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+          STLAT_SKIP_RENDER=1 "$BLENDER_BIN" --background --factory-startup --python scripts/world3d_probe.py 2>&1 | tee -a blender.log
+          python3 scripts/validate_deterministic_manifest.py artifacts/stlat-world3d-manifest-first-build.json artifacts/stlat-world3d-manifest.json artifacts/stlat-world3d-determinism.json
+
       - name: Test camera isolation in the saved Blender scene
         if: success()
         shell: bash
@@ -124,10 +139,12 @@ jobs:
           test -s artifacts/stlat-world3d-manifest.json
           test -s artifacts/stlat-world3d-motion-validation.json
           test -s artifacts/stlat-world3d-camera-isolation.json
+          test -s artifacts/stlat-world3d-determinism.json
           file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
           cat artifacts/stlat-world3d-manifest.json
           cat artifacts/stlat-world3d-motion-validation.json
           cat artifacts/stlat-world3d-camera-isolation.json
+          cat artifacts/stlat-world3d-determinism.json
 
       - name: Publish scene, renders and diagnostics
         if: always()
