@@ -329,6 +329,7 @@ class WorldEventReplayTests(unittest.TestCase):
         self.assertEqual([], contract.validate_state(result))
 
     def test_parent_replay_rejects_cycle(self):
+        self.initial["entities"][1]["parent_id"] = "room.floor"
         event = self.event("evt-parent-cycle", "entity_parent_change_approved", "room.floor",
                            previous_parent_id=None, new_parent_id="char.001")
         with self.assertRaisesRegex(self.ReplayError, "parent hierarchy contains a cycle"):
