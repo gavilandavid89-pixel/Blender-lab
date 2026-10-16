@@ -55,6 +55,7 @@ La ejecución completa más reciente verificada es [run 38969021279](https://git
 | T-027 | Entidad física cruza los límites duros del mundo por su AABB o por el origen de transformación | `validate_state` + regresiones positivas/negativas y replay | Errores `bounds exceed hard world bounds` y `transform.position exceeds hard world bounds` | Cámaras excluidas explícitamente porque pueden estar fuera del volumen físico |
 | T-028 | Snapshot alterado, versión inmutable, hueco de historial o salto de linaje | `scripts/world_state_store.py` + regresiones de almacenamiento | `artifacts/stlat-world-state-store.json` y pruebas unitarias | Almacén local de un solo escritor; SHA-256 no es firma criptográfica |
 | T-029 | Jerarquía de entidades con padre inexistente, autorreferencia o ciclo | `validate_state` + regresiones de jerarquía | Errores de referencia y ciclo de padre | Valida el grafo estructural; no calcula transformaciones heredadas de Blender |
+| T-030 | Reparentado silencioso o evento de reparentado contradictorio | `validate_transition` + `entity_parent_change_approved` en replay | Pruebas de aprobación, parent anterior/nuevo y ciclo | No recalcula transforms heredadas por jerarquía |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 

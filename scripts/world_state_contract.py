@@ -208,6 +208,11 @@ def validate_transition(previous: Any, current: Any) -> list[str]:
             errors.append(f"removed entity {entity_id} requires an approved entity_removed event")
     for entity_id in sorted(before.keys() & after.keys()):
         old, new = before[entity_id], after[entity_id]
+        if old.get("parent_id") != new.get("parent_id"):
+            event = _approved_event(current, "entity_parent_change_approved", entity_id)
+            if (event is None or event.get("previous_parent_id") != old.get("parent_id")
+                    or event.get("new_parent_id") != new.get("parent_id")):
+                errors.append(f"entity {entity_id} parent changed without matching approved event")
         if old.get("role") != new.get("role"):
             event = _approved_event(current, "entity_role_change_approved", entity_id)
             if event is None or event.get("previous_role") != old.get("role") or event.get("new_role") != new.get("role"):

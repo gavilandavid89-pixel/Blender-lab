@@ -12,7 +12,7 @@ class ReplayError(ValueError):
     """Raised when an event cannot be safely applied to the world state."""
 
 
-SUPPORTED_EVENTS = {"entity_created", "entity_removed", "transform_updated", "entity_role_change_approved", "identity_change_approved"}
+SUPPORTED_EVENTS = {"entity_created", "entity_removed", "transform_updated", "entity_role_change_approved", "identity_change_approved", "entity_parent_change_approved"}
 
 
 def replay_events(initial_state: Any, events: Any) -> dict[str, Any]:
@@ -102,6 +102,29 @@ def replay_events(initial_state: Any, events: Any) -> dict[str, Any]:
             if payload:
                 raise ReplayError(f"{prefix}.payload must be empty for entity_role_change_approved")
             entity["role"] = new_role
+        elif event_type == "entity_parent_change_approved":
+            entity = entities.get(target_id)
+            if entity is None:
+                raise ReplayError(f"{prefix} target entity {target_id!r} does not exist")
+            if "previous_parent_id" not in event or "new_parent_id" not in event:
+                raise ReplayError(f"{prefix} must declare previous_parent_id and new_parent_id")
+            previous_parent, new_parent = event["previous_parent_id"], event["new_parent_id"]
+            if previous_parent != entity.get("parent_id"):
+                raise ReplayError(f"{prefix}.previous_parent_id does not match current parent")
+            if new_parent is not None and (not isinstance(new_parent, str) or not new_parent.strip()):
+                raise ReplayError(f"{prefix}.new_parent_id must be a non-empty string or null")
+            if new_parent == target_id:
+                raise ReplayError(f"{prefix} cannot parent an entity to itself")
+            if new_parent is not None and new_parent not in entities:
+                raise ReplayError(f"{prefix}.new_parent_id references a missing entity")
+            if payload:
+                raise ReplayError(f"{prefix}.payload must be empty for entity_parent_change_approved")
+            if previous_parent == new_parent:
+                raise ReplayError(f"{prefix} must change the parent relationship")
+            if new_parent is None:
+                entity.pop("parent_id", None)
+            else:
+                entity["parent_id"] = new_parent
         elif event_type == "identity_change_approved":
             entity = entities.get(target_id)
             if entity is None:
