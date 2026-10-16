@@ -153,6 +153,10 @@ class WorldEventReplayTests(unittest.TestCase):
         self.assertEqual(2, result["version"])
         self.assertEqual(1, result["parent_version"])
         self.assertEqual([], contract.validate_state(result))
+        expected = snapshot(2, self.initial["entities"], events=[event])
+        expected["entities"][1]["transform"] = copy.deepcopy(event["payload"]["transform"])
+        expected["entities"][1]["bounds"] = copy.deepcopy(event["payload"]["bounds"])
+        self.assertEqual(expected, result, "replayed snapshot must exactly match the expected target state")
 
     def test_replay_create_then_remove_in_order(self):
         events = [

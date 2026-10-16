@@ -53,6 +53,29 @@ def run_self_test(output_path: Path) -> dict:
         "final_snapshot_valid": validate_state(final_state) == [],
         "input_snapshot_unchanged": initial["version"] == 1 and initial["entities"][0]["transform"]["position"] == [0.0, 0.0, 0.0],
     }
+    identity_initial = copy.deepcopy(initial)
+    identity_initial["entities"][0]["identity_ref"] = "identity.original"
+    identity_initial["entities"][0]["attributes"]["identity_signature"] = "sig-v1"
+    identity_event = {
+        "id": "evt-identity-001", "type": "identity_change_approved", "timestamp": 2.0,
+        "actor_id": "self-test", "target_id": "char.001", "approved": True,
+        "previous_identity_ref": "identity.original", "new_identity_ref": "identity.updated",
+        "changed_identity_attributes": ["identity_signature"],
+        "payload": {"attributes": {"identity_signature": "sig-v2"}},
+    }
+    identity_state = replay_events(identity_initial, [identity_event])
+    checks["approved_identity_event_replayed"] = (
+        identity_state["entities"][0]["identity_ref"] == "identity.updated"
+        and identity_state["entities"][0]["attributes"]["identity_signature"] == "sig-v2"
+    )
+    role_event = {
+        "id": "evt-role-001", "type": "entity_role_change_approved", "timestamp": 2.0,
+        "actor_id": "self-test", "target_id": "char.001", "approved": True,
+        "previous_role": "character", "new_role": "character.hero",
+    }
+    role_state = replay_events(initial, [role_event])
+    checks["approved_role_event_replayed"] = role_state["entities"][0]["role"] == "character.hero"
+
     rejected = copy.deepcopy(events[0])
     rejected["id"], rejected["approved"] = "evt-unapproved-001", False
     try:
