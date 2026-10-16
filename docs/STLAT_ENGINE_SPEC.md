@@ -3,6 +3,14 @@
 **Estado:** especificación de diseño, no afirmación de que todos los módulos estén implementados.  
 **Principio:** el mundo y su estado temporal son la fuente de verdad; el generador de vídeo es un componente subordinado que produce una propuesta visual que debe verificarse.
 
+## Documentos complementarios
+
+- [Contratos operativos M00–M16](SCENE_AND_MODULE_CONTRACTS.md): entradas, salidas, límites, estados y pruebas mínimas.
+- [Escenas neutras](NEUTRAL_SCENES.md): selección de plantillas, defaults, capas y reglas contra props implícitos.
+- [Esquema de perfiles de escena](schemas/scene-profile.v1.schema.json) y [ejemplo neutral_studio](examples/neutral-studio.v1.json).
+
+La especificación v0.1 original define M00–M13; el documento complementario añade M14 Selector de escena neutra, M15 Registro de restricciones y M16 Registro de recursos. Los tres son módulos de diseño, todavía no implementados.
+
 ## 1. Objetivo y límites
 
 ST-LAT busca reducir invenciones visuales: cambios de identidad, proporciones inestables, objetos que aparecen/desaparecen, atravesar geometría, posiciones imposibles, saltos temporales y cámaras incompatibles con la escena.
