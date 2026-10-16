@@ -7,6 +7,7 @@ on:
       - "scripts/**"
       - ".github/workflows/blender.yml"
       - "README.md"
+      - "docs/**"
   workflow_dispatch:
 
 permissions:
@@ -24,6 +25,9 @@ jobs:
     steps:
       - name: Check out lab
         uses: actions/checkout@v4
+
+      - name: Validate scene profile contracts
+        run: python3 scripts/validate_scene_profiles.py
 
       - name: Install Linux graphics runtime
         run: |
