@@ -137,6 +137,14 @@ class WorldManifestContractTests(unittest.TestCase):
         data["renders"] = ["main.png", ""]
         self.assertTrue(any("renders must list" in e for e in self.errors(data)))
 
+    def test_motion_report_validator_self_test_passes(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/validate_motion_report.py"), "--self-test"],
+            cwd=ROOT, text=True, capture_output=True, check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("MOTION_REPORT_SELF_TEST=PASS", result.stdout)
+
     def test_scene_profile_contract_script_passes(self):
         result = subprocess.run(
             [sys.executable, str(ROOT / "scripts/validate_scene_profiles.py")],
