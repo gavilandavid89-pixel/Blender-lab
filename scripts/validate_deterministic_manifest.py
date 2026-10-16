@@ -69,7 +69,7 @@ def compare_manifests(first: Any, second: Any) -> dict[str, Any]:
     return {
         "schema": "stlat.deterministic-build.v1",
         "status": checks["status"],
-        "method": "compare IDs, names, types, semantic roles, transforms, dimensions and world AABBs from two independent scene builds",
+        "method": "compare IDs, names, types, semantic roles, transforms, dimensions, world AABBs and canonical evaluated mesh geometry hashes from two independent scene builds",
         "first_build_object_count": len(left),
         "second_build_object_count": len(right),
         "missing_from_second": missing_from_second,
@@ -77,7 +77,7 @@ def compare_manifests(first: Any, second: Any) -> dict[str, Any]:
         "changed_objects": changed,
         "errors": errors,
         "checks": checks,
-        "note": "This compares exported semantic geometry metadata, not vertex-level mesh hashes or render pixels.",
+        "note": "This compares canonicalized evaluated mesh geometry, but not materials, textures, rig/animation state or rendered pixels.",
     }
 
 def validate_report(data: Any) -> list[str]:
