@@ -42,6 +42,7 @@ La validación usa muestras de trayectoria y cajas delimitadoras alineadas con l
 - [Perfil de ejemplo neutral_studio](docs/examples/neutral-studio.v1.json)
 - [Esquema del estado persistente del mundo](docs/schemas/world-state.v1.schema.json)
 - [Matriz de pruebas, evidencia y capacidades pendientes](docs/TEST_MATRIX.md)
+- [Guía de CI, artefactos y diagnóstico de fallos](docs/CI_AND_ARTIFACTS.md)
 
 La documentación separa los contratos diseñados de las capacidades que ya tienen pruebas. Las escenas neutras son perfiles explícitos; no autorizan a inventar entidades narrativas.
 
@@ -52,10 +53,11 @@ Desde la raíz del repositorio, las comprobaciones rápidas no necesitan Blender
 ```bash
 python3 scripts/validate_scene_profiles.py
 python3 scripts/validate_world_manifest.py --self-test
+python3 scripts/validate_motion_report.py --self-test
 python3 -m unittest discover -s tests -v
 ```
 
-La acción de GitHub ejecuta estos controles antes de instalar Blender y después construye la escena, valida movimiento y manifiesto, y publica los artefactos. La [matriz de pruebas](docs/TEST_MATRIX.md) separa las comprobaciones reales de las capacidades aún pendientes.
+La acción de GitHub ejecuta estos controles antes de instalar Blender y después construye la escena, valida el informe persistido de movimiento y el manifiesto, y publica los artefactos. La [matriz de pruebas](docs/TEST_MATRIX.md) separa las comprobaciones reales de las capacidades aún pendientes; la [guía de CI y diagnóstico](docs/CI_AND_ARTIFACTS.md) explica cómo interpretar los informes y depurar fallos.
 
 ## Ejecución
 
