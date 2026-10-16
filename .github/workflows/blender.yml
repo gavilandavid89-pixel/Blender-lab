@@ -42,6 +42,9 @@ jobs:
       - name: Self-test world event replay
         run: python3 scripts/validate_world_replay.py
 
+      - name: Self-test persistent world snapshot store
+        run: python3 scripts/validate_world_store.py
+
       - name: Self-test deterministic manifest validator
         run: python3 scripts/validate_deterministic_manifest.py --self-test
 
@@ -144,12 +147,14 @@ jobs:
           test -s artifacts/stlat-world3d-camera-isolation.json
           test -s artifacts/stlat-world3d-determinism.json
           test -s artifacts/stlat-world-state-replay.json
+          test -s artifacts/stlat-world-state-store.json
           file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
           cat artifacts/stlat-world3d-manifest.json
           cat artifacts/stlat-world3d-motion-validation.json
           cat artifacts/stlat-world3d-camera-isolation.json
           cat artifacts/stlat-world3d-determinism.json
           cat artifacts/stlat-world-state-replay.json
+          cat artifacts/stlat-world-state-store.json
 
       - name: Publish scene, renders and diagnostics
         if: always()

@@ -291,5 +291,79 @@ class WorldEventReplayTests(unittest.TestCase):
             self.replay_events(self.initial, [event])
 
 
+
+class WorldStateStoreTests(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        from world_state_store import SnapshotStoreError, WorldStateStore
+        from world_state_replay import replay_events
+        self.temp = tempfile.TemporaryDirectory(prefix="stlat-store-unit-")
+        self.addCleanup(self.temp.cleanup)
+        self.Store = WorldStateStore
+        self.StoreError = SnapshotStoreError
+        self.replay_events = replay_events
+        self.root = Path(self.temp.name) / "store"
+        self.initial = snapshot()
+        self.event = {
+            "id": "evt-store-unit", "type": "transform_updated", "timestamp": 2.0,
+            "actor_id": "unit-test", "target_id": "char.001", "approved": True,
+            "payload": {
+                "transform": {"position": [1.0, 0.0, 0.0], "rotation_euler_rad": [0.0, 0.0, 0.0],
+                              "scale": [1.0, 1.0, 1.0]},
+                "bounds": {"min": [0.5, -0.5, 0.0], "max": [1.5, 0.5, 2.0], "kind": "aabb"}}}
+        self.next_state = self.replay_events(self.initial, [self.event])
+
+    def test_snapshot_store_round_trip_and_latest(self):
+        store = self.Store(self.root)
+        store.save_snapshot(self.initial)
+        store.save_snapshot(self.next_state)
+        self.assertEqual(self.initial, store.load_snapshot("world-alpha", 1))
+        self.assertEqual(self.next_state, store.load_latest("world-alpha"))
+
+    def test_snapshot_store_versions_are_immutable(self):
+        store = self.Store(self.root)
+        store.save_snapshot(self.initial)
+        altered = copy.deepcopy(self.initial)
+        altered["timestamp"] = 1.5
+        with self.assertRaisesRegex(self.StoreError, "immutable"):
+            store.save_snapshot(altered)
+
+    def test_snapshot_store_rejects_version_gaps(self):
+        store = self.Store(self.root)
+        store.save_snapshot(self.initial)
+        gap = snapshot(3, self.initial["entities"])
+        with self.assertRaisesRegex(self.StoreError, "latest version"):
+            store.save_snapshot(gap)
+
+    def test_snapshot_store_detects_file_tampering(self):
+        store = self.Store(self.root)
+        path = store.save_snapshot(self.initial)
+        envelope = json.loads(path.read_text(encoding="utf-8"))
+        envelope["snapshot"]["timestamp"] = 99.0
+        path.write_text(json.dumps(envelope), encoding="utf-8")
+        with self.assertRaisesRegex(self.StoreError, "digest mismatch"):
+            store.load_snapshot("world-alpha", 1)
+
+    def test_snapshot_store_rejects_invalid_snapshot(self):
+        store = self.Store(self.root)
+        invalid = copy.deepcopy(self.initial)
+        invalid["axes"]["z"] = "down"
+        with self.assertRaisesRegex(self.StoreError, "invalid snapshot"):
+            store.save_snapshot(invalid)
+
+    def test_snapshot_store_save_is_idempotent_for_same_version(self):
+        store = self.Store(self.root)
+        first = store.save_snapshot(self.initial)
+        second = store.save_snapshot(self.initial)
+        self.assertEqual(first, second)
+
+    def test_snapshot_store_requires_contiguous_valid_transition(self):
+        store = self.Store(self.root)
+        store.save_snapshot(self.initial)
+        invalid_next = copy.deepcopy(self.next_state)
+        invalid_next["entities"][1]["identity_ref"] = "identity.vegeta"
+        with self.assertRaisesRegex(self.StoreError, "transition invalid"):
+            store.save_snapshot(invalid_next)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
