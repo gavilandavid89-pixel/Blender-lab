@@ -41,8 +41,21 @@ La validación usa muestras de trayectoria y cajas delimitadoras alineadas con l
 - [Esquema JSON de perfiles de escena](docs/schemas/scene-profile.v1.schema.json)
 - [Perfil de ejemplo neutral_studio](docs/examples/neutral-studio.v1.json)
 - [Esquema del estado persistente del mundo](docs/schemas/world-state.v1.schema.json)
+- [Matriz de pruebas, evidencia y capacidades pendientes](docs/TEST_MATRIX.md)
 
 La documentación separa los contratos diseñados de las capacidades que ya tienen pruebas. Las escenas neutras son perfiles explícitos; no autorizan a inventar entidades narrativas.
+
+## Pruebas de contrato
+
+Desde la raíz del repositorio, las comprobaciones rápidas no necesitan Blender ni dependencias externas:
+
+```bash
+python3 scripts/validate_scene_profiles.py
+python3 scripts/validate_world_manifest.py --self-test
+python3 -m unittest discover -s tests -v
+```
+
+La acción de GitHub ejecuta estos controles antes de instalar Blender y después construye la escena, valida movimiento y manifiesto, y publica los artefactos. La [matriz de pruebas](docs/TEST_MATRIX.md) separa las comprobaciones reales de las capacidades aún pendientes.
 
 ## Ejecución
 
