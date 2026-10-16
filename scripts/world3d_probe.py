@@ -175,10 +175,28 @@ for obj in sorted(scene.objects, key=lambda o: o.name):
     if obj.type == "MESH":
         mesh = evaluated.to_mesh()
         try:
+            # Canonicalize by coordinates rather than raw vertex indices. Some
+            # Blender primitive meshes can reorder equivalent vertices between
+            # independent builds; index-based hashes would report false drift.
+            vertex_by_index = {
+                int(vertex.index): tuple(round(float(c), 6) for c in vertex.co)
+                for vertex in mesh.vertices
+            }
+            canonical_vertices = sorted(vertex_by_index.values())
+            canonical_edges = sorted(
+                tuple(sorted(vertex_by_index[int(index)] for index in edge.vertices))
+                for edge in mesh.edges
+            )
+            canonical_faces = []
+            for polygon in mesh.polygons:
+                points = [vertex_by_index[int(index)] for index in polygon.vertices]
+                if points:
+                    rotations = [tuple(points[offset:] + points[:offset]) for offset in range(len(points))]
+                    canonical_faces.append(min(rotations))
             geometry = {
-                "vertices": [[round(float(c), 6) for c in vertex.co] for vertex in mesh.vertices],
-                "edges": [sorted(int(index) for index in edge.vertices) for edge in mesh.edges],
-                "polygons": [[int(index) for index in polygon.vertices] for polygon in mesh.polygons],
+                "vertices": canonical_vertices,
+                "edges": canonical_edges,
+                "polygons": sorted(canonical_faces),
             }
             mesh_vertex_count = len(mesh.vertices)
             mesh_edge_count = len(mesh.edges)
