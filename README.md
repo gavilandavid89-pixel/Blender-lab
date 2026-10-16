@@ -33,6 +33,17 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 
 La validación usa muestras de trayectoria y cajas delimitadoras alineadas con los ejes (AABB). Es una prueba conservadora útil para detectar contradicciones espaciales; **no equivale todavía a una simulación física completa** y no valida deformación de mallas ni calidad de animación.
 
+## Especificaciones de arquitectura
+
+- [Arquitectura funcional y módulos M00–M13](docs/STLAT_ENGINE_SPEC.md)
+- [Contratos operativos de módulos M00–M16](docs/SCENE_AND_MODULE_CONTRACTS.md)
+- [Reglas de escenas neutras y valores por defecto](docs/NEUTRAL_SCENES.md)
+- [Esquema JSON de perfiles de escena](docs/schemas/scene-profile.v1.schema.json)
+- [Perfil de ejemplo neutral_studio](docs/examples/neutral-studio.v1.json)
+- [Esquema del estado persistente del mundo](docs/schemas/world-state.v1.schema.json)
+
+La documentación separa los contratos diseñados de las capacidades que ya tienen pruebas. Las escenas neutras son perfiles explícitos; no autorizan a inventar entidades narrativas.
+
 ## Ejecución
 
 Los cambios en `scripts/**`, este README o el workflow activan GitHub Actions. También se puede iniciar manualmente desde **Actions → Blender Headless Lab → Run workflow**.
