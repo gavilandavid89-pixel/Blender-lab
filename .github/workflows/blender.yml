@@ -36,6 +36,9 @@ jobs:
       - name: Run ST-LAT contract regression tests
         run: python3 -m unittest discover -s tests -v
 
+      - name: Self-test motion report validator
+        run: python3 scripts/validate_motion_report.py --self-test
+
       - name: Install Linux graphics runtime
         run: |
           sudo apt-get update
@@ -85,6 +88,10 @@ jobs:
             tail -n 100 blender.log
             exit "$validation_status"
           fi
+
+      - name: Validate persisted motion report
+        if: success()
+        run: python3 scripts/validate_motion_report.py
 
       - name: Validate semantic world manifest
         if: success()
