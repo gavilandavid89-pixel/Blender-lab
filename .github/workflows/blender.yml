@@ -29,6 +29,9 @@ jobs:
       - name: Validate scene profile contracts
         run: python3 scripts/validate_scene_profiles.py
 
+      - name: Self-test world manifest validator
+        run: python3 scripts/validate_world_manifest.py --self-test
+
       - name: Install Linux graphics runtime
         run: |
           sudo apt-get update
@@ -78,6 +81,10 @@ jobs:
             tail -n 100 blender.log
             exit "$validation_status"
           fi
+
+      - name: Validate semantic world manifest
+        if: success()
+        run: python3 scripts/validate_world_manifest.py
 
       - name: Validate output files
         if: success()
