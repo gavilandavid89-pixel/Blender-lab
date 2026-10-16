@@ -373,6 +373,27 @@ class WorldStateStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(self.StoreError, "missing versions"):
             store.load_latest("world-alpha")
 
+    def test_valid_parent_child_hierarchy_passes(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "room.floor"
+        self.assertEqual([], contract.validate_state(data))
+
+    def test_missing_parent_reference_is_rejected(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "entity.missing"
+        self.assertTrue(any("references missing parent" in e for e in contract.validate_state(data)))
+
+    def test_entity_cannot_parent_itself(self):
+        data = snapshot()
+        data["entities"][1]["parent_id"] = "char.001"
+        self.assertTrue(any("cannot be its own parent" in e for e in contract.validate_state(data)))
+
+    def test_parent_hierarchy_cycle_is_rejected(self):
+        data = snapshot()
+        data["entities"][0]["parent_id"] = "char.001"
+        data["entities"][1]["parent_id"] = "room.floor"
+        self.assertTrue(any("parent hierarchy contains a cycle" in e for e in contract.validate_state(data)))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

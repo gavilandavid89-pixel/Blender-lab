@@ -122,6 +122,44 @@ def validate_state(state: Any) -> list[str]:
         if "attributes" in entity and not isinstance(entity["attributes"], dict):
             errors.append(f"{prefix}.attributes must be an object")
 
+    # Parent links are structural references within this snapshot; reject dangling links and cycles.
+    entity_map = {
+        entity["id"]: entity for entity in entities
+        if isinstance(entity, dict) and isinstance(entity.get("id"), str) and entity.get("id")
+    }
+    for index, entity in enumerate(entities):
+        if not isinstance(entity, dict):
+            continue
+        parent_id = entity.get("parent_id")
+        entity_id = entity.get("id")
+        if parent_id is not None and (not isinstance(parent_id, str) or not parent_id.strip()):
+            errors.append(f"entities[{index}].parent_id must be a non-empty string or null")
+        elif isinstance(parent_id, str):
+            if parent_id == entity_id:
+                errors.append(f"entity {entity_id} cannot be its own parent")
+            elif parent_id not in entity_map:
+                errors.append(f"entity {entity_id} references missing parent {parent_id}")
+
+    reported_cycles: set[frozenset[str]] = set()
+    for start_id in entity_map:
+        path: list[str] = []
+        positions: dict[str, int] = {}
+        cursor = start_id
+        while cursor in entity_map:
+            if cursor in positions:
+                cycle_nodes = path[positions[cursor]:]
+                cycle_key = frozenset(cycle_nodes)
+                if cycle_key not in reported_cycles:
+                    errors.append("parent hierarchy contains a cycle: " + " -> ".join(cycle_nodes + [cursor]))
+                    reported_cycles.add(cycle_key)
+                break
+            positions[cursor] = len(path)
+            path.append(cursor)
+            parent_id = entity_map[cursor].get("parent_id")
+            if not isinstance(parent_id, str) or parent_id not in entity_map:
+                break
+            cursor = parent_id
+
     events = state.get("events", [])
     if not isinstance(events, list):
         errors.append("events must be an array when provided")

@@ -54,6 +54,7 @@ La ejecución completa más reciente verificada es [run 38969021279](https://git
 | T-026 | Replay de transformaciones, creación/eliminación, rol e identidad; rechazar eventos no aprobados o contradictorios | `scripts/world_state_replay.py` + `tests/test_world_state_contract.py` | `artifacts/stlat-world-state-replay.json` y pruebas unitarias | Replay en memoria; no es autorización criptográfica ni persistencia de base de datos |
 | T-027 | Entidad física cruza los límites duros del mundo por su AABB o por el origen de transformación | `validate_state` + regresiones positivas/negativas y replay | Errores `bounds exceed hard world bounds` y `transform.position exceeds hard world bounds` | Cámaras excluidas explícitamente porque pueden estar fuera del volumen físico |
 | T-028 | Snapshot alterado, versión inmutable, hueco de historial o salto de linaje | `scripts/world_state_store.py` + regresiones de almacenamiento | `artifacts/stlat-world-state-store.json` y pruebas unitarias | Almacén local de un solo escritor; SHA-256 no es firma criptográfica |
+| T-029 | Jerarquía de entidades con padre inexistente, autorreferencia o ciclo | `validate_state` + regresiones de jerarquía | Errores de referencia y ciclo de padre | Valida el grafo estructural; no calcula transformaciones heredadas de Blender |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
