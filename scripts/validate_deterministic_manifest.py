@@ -110,7 +110,8 @@ def validate_report(data: Any) -> list[str]:
 def self_test() -> None:
     obj = {"id": "character.head", "name": "Character.Head", "type": "MESH", "role": "character.head",
            "location": [0, 0, 1], "rotation_euler_rad": [0, 0, 0], "dimensions": [0.4, 0.4, 0.4],
-           "aabb_world": {"min": [-0.2, -0.2, 0.8], "max": [0.2, 0.2, 1.2]},\n           "mesh_vertex_count": 12, "mesh_edge_count": 18, "mesh_polygon_count": 8, "mesh_geometry_sha256": "abc123"}
+           "aabb_world": {"min": [-0.2, -0.2, 0.8], "max": [0.2, 0.2, 1.2]},
+           "mesh_vertex_count": 12, "mesh_edge_count": 18, "mesh_polygon_count": 8, "mesh_geometry_sha256": "abc123"}
     base = {"schema": "stlat.world3d.v1", "status": "success", "object_count": 1, "objects": [obj]}
     good = compare_manifests(base, copy.deepcopy(base))
     if validate_report(good):
