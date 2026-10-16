@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://st-lat.invalid/schemas/scene-profile.v1.schema.json",
+  "title": "ST-LAT Scene Profile v1",
+  "description": "Perfil explícito de plantilla neutra y reglas de fallback. Especificación, no prueba de implementación.",
+  "type": "object",
+  "required": [
+    "schema",
+    "profile_id",
+    "version",
+    "purpose",
+    "environment",
+    "defaults",
+    "layers",
+    "forbidden_implicit_entities",
+    "camera_policy"
+  ],
+  "properties": {
+    "schema": {
+      "const": "stlat.scene-profile.v1"
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "purpose": {
+      "enum": [
+        "general_fallback",
+        "geometry_test",
+        "interior",
+        "exterior",
+        "character_reference"
+      ]
+    },
+    "environment": {
+      "type": "object",
+      "required": [
+        "template",
+        "units",
+        "deterministic"
+      ],
+      "properties": {
+        "template": {
+          "enum": [
+            "neutral_studio",
+            "greybox_lab",
+            "empty_room",
+            "neutral_outdoor"
+          ]
+        },
+        "units": {
+          "const": "meters"
+        },
+        "deterministic": {
+          "type": "boolean"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "world_bounds": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "min": {
+              "$ref": "#/$defs/vector3"
+            },
+            "max": {
+              "$ref": "#/$defs/vector3"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "type": "object",
+      "required": [
+        "lighting",
+        "materials",
+        "motion",
+        "props_policy"
+      ],
+      "properties": {
+        "lighting": {
+          "enum": [
+            "soft_diffuse",
+            "flat_debug",
+            "explicit_scene_lighting"
+          ]
+        },
+        "materials": {
+          "enum": [
+            "neutral_matte",
+            "flat_debug",
+            "project_materials"
+          ]
+        },
+        "motion": {
+          "enum": [
+            "idle",
+            "prompt_only",
+            "approved_timeline"
+          ]
+        },
+        "props_policy": {
+          "const": "no_unrequested_narrative_entities"
+        },
+        "background": {
+          "type": "string"
+        },
+        "camera_preset": {
+          "type": "string"
+        },
+        "exposure": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "frame_rate": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "resolution": {
+          "type": "object",
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "world_static",
+          "props_persistent",
+          "characters",
+          "motion_targets",
+          "camera_rigs",
+          "lighting",
+          "debug",
+          "ephemeral_fx"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "forbidden_implicit_entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "camera_policy": {
+      "type": "object",
+      "required": [
+        "world_transform_isolation",
+        "inspection_views",
+        "debug_layer_in_final"
+      ],
+      "properties": {
+        "world_transform_isolation": {
+          "const": true
+        },
+        "inspection_views": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "front",
+              "three_quarter",
+              "side",
+              "topdown"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "debug_layer_in_final": {
+          "const": false
+        },
+        "lens_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "selection": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "selected_because": {
+          "type": "string"
+        },
+        "approved_by_user": {
+          "type": "boolean"
+        },
+        "source": {
+          "enum": [
+            "user_explicit",
+            "project_approved",
+            "template_default",
+            "inferred_low_confidence",
+            "system_derived"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}
