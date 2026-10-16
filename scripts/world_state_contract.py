@@ -89,6 +89,14 @@ def validate_state(state: Any) -> list[str]:
             scale = transform.get("scale")
             if _vector3(scale) and any(v <= 0 for v in scale):
                 errors.append(f"{prefix}.transform.scale values must be positive")
+            position = transform.get("position")
+            if (_vector3(position) and isinstance(bounds, dict)
+                    and _vector3(bounds.get("min")) and _vector3(bounds.get("max"))
+                    and not any(bounds["min"][i] > bounds["max"][i] for i in range(3))
+                    and isinstance(entity.get("role"), str)
+                    and not entity["role"].lower().startswith("camera")
+                    and any(position[i] < bounds["min"][i] or position[i] > bounds["max"][i] for i in range(3))):
+                errors.append(f"{prefix}.transform.position exceeds hard world bounds")
         eb = entity.get("bounds")
         if not isinstance(eb, dict):
             errors.append(f"{prefix}.bounds must be an object")
