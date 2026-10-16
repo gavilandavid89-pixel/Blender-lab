@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "scripts/**"
+      - "tests/**"
       - ".github/workflows/blender.yml"
       - "README.md"
       - "docs/**"
@@ -31,6 +32,9 @@ jobs:
 
       - name: Self-test world manifest validator
         run: python3 scripts/validate_world_manifest.py --self-test
+
+      - name: Run ST-LAT contract regression tests
+        run: python3 -m unittest discover -s tests -v
 
       - name: Install Linux graphics runtime
         run: |
