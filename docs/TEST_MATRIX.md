@@ -1,6 +1,6 @@
 # ST-LAT Engine — matriz de pruebas
 
-**Última actualización:** 2026-10-15  
+**Última actualización:** 2026-10-16  
 **Regla:** una capacidad se marca como implementada solo si existe código ejecutable y una prueba reproducible. Una especificación o un archivo de ejemplo, por sí solos, no prueban que el motor aplique esa regla en tiempo de ejecución.
 
 ## 1. Ejecutar las pruebas
@@ -16,7 +16,7 @@ python3 -m unittest discover -s tests -v
 
 La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de instalar Blender; después construye la escena, valida movimiento, valida el manifiesto real y publica el artefacto `stlat-world3d-output`.
 
-Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión `tests/` y el validador independiente del informe de movimiento se incorporan en los commits siguientes; necesitan una ejecución completa verde para considerarse validados por CI.
+Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
 ## 2. Matriz actual
 
@@ -40,16 +40,21 @@ Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89
 | T-016 | El ejemplo de perfil viola su contrato | Subproceso de `validate_scene_profiles.py` desde unittest | Prueba de integración ligera | No valida todo el vocabulario JSON Schema genérico |
 | T-017 | Salida con informe de movimiento fallido | El script de movimiento lanza excepción si un check falla | Código de salida no cero en CI | El script que genera la evidencia y el validador son controles separados |
 | T-018 | Informe persistido incompleto o evidencia contradictoria | `scripts/validate_motion_report.py` + autoprueba negativa | `MOTION_REPORT_VALIDATION=PASS` | Valida la evidencia estructurada; no reejecuta la física ni certifica el mundo real |
+| T-019 | Snapshot de mundo con campos, ejes o geometría inválidos | `scripts/world_state_contract.py` + `tests/test_world_state_contract.py` | Errores por campo y regresiones negativas | Valida invariantes esenciales, no todo el estándar JSON Schema |
+| T-020 | Identidad o firma de apariencia cambia sin aprobación | `validate_transition` + pruebas positivas/negativas | Rechazo de cambios protegidos no aprobados | No analiza imágenes ni determina identidad visual real |
+| T-021 | Salto de versión o parent_version incorrecto | `validate_transition` | Linaje de versiones | No guarda snapshots en una base de datos |
+| T-022 | Cambio de cámara muta entidades del mundo | `validate_camera_isolation` | Rechaza cualquier diferencia en entidades no cámara | Prueba estados JSON; todavía no intercepta cambios dentro de Blender |
+| T-023 | Entidad aparece/desaparece sin evento aprobado | `validate_transition` | Pruebas de ciclo de vida de entidades | Los eventos son datos declarados; la autorización externa aún no está conectada |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
 | ID futuro | Prueba que debe existir antes de integrar un generador de vídeo | Estado |
 |---|---|---|
-| F-001 | Cambiar cámara y demostrar que ninguna transformación canónica del mundo cambia | Pendiente |
-| F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Pendiente |
+| F-001 | Cambiar cámara y demostrar que ninguna transformación canónica del mundo cambia | Parcial: validador de estados JSON implementado; falta integrarlo con operaciones reales de cámara de Blender |
+| F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Parcial: continuidad de IDs y campos protegidos comprobada entre snapshots; no existe todavía registro persistente de assets/identidades |
 | F-003 | Aplicar una orden explícita que contradice un default y demostrar que gana la orden, registrando el conflicto | Pendiente; contrato documentado, motor M15 no implementado |
 | F-004 | Prompt sin muebles/armas/vehículos: comprobar que no aparecen entidades implícitas | Pendiente; el perfil declara prohibiciones, no hay compilador de prompt integrado |
-| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Pendiente; M03/M12 siguen siendo contratos de diseño |
+| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Pendiente; M03/M12 siguen siendo contratos de diseño; aún no se implementa replay de eventos |
 | F-006 | Misma identidad en varias cámaras/tiempos sin cambiar proporciones ni ID | Pendiente; el personaje actual es proxy |
 | F-007 | Colisiones con cápsulas o volúmenes continuos y prueba de movimiento rápido | Pendiente; el validador actual usa AABB muestreada |
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |

@@ -101,14 +101,26 @@ El selector M14 usa el contrato de [escenas neutras](NEUTRAL_SCENES.md) y el esq
 
 La plantilla solo decide valores de presentación. No puede añadir sujetos, utilería narrativa, acciones, emociones, ropa distintiva o relaciones no solicitadas. Los objetos técnicos deben ir en capas de cámara, iluminación o depuración y no filtrarse al render final.
 
-## 8. Qué está probado hoy
+## 8. Estado versionado: primera capa ejecutable
+
+`scripts/world_state_contract.py` implementa validaciones puras, sin dependencias externas, para snapshots `stlat.world-state.v1`:
+
+- valida unidades, ejes, bounds, vectores finitos, escala positiva e IDs únicos;
+- exige linaje de versión contiguo (`version = parent.version + 1`);
+- exige eventos explícitos aprobados para crear/eliminar entidades;
+- protege `identity_ref`, `identity_signature`, `asset_id` y `appearance_id` contra cambios silenciosos;
+- comprueba que una operación marcada como «solo cámara» cambie una cámara y no altere ninguna entidad no cámara.
+
+Las pruebas están en `tests/test_world_state_contract.py`. Esto es una **capa de contrato sobre snapshots JSON**, no todavía el módulo M03/M07 integrado: no almacena estado, no hace replay de eventos y no puede impedir que otro proceso cambie directamente una escena de Blender. Un evento aprobado se trata como evidencia declarada; la autorización real todavía debe conectarse.
+
+## 9. Qué está probado hoy
 
 - La acción de GitHub construye una habitación 3D de prueba, genera renders y manifiesto, ejecuta comprobaciones espaciales aproximadas y publica artefactos.
 - La validación de movimiento usa muestras de trayectoria y AABB; no es una simulación física completa.
 - El personaje es un proxy segmentado, no un rig con identidad persistente.
 - El selector de escenas, el ledger de restricciones, el registro de recursos, la generación de referencias multicanal, el adaptador de vídeo y el evaluador temporal siguen siendo contratos de diseño hasta que haya código y pruebas.
 
-## 9. Siguiente orden de implementación
+## 10. Siguiente orden de implementación
 
 1. Validar esquema de perfiles y ejemplo en CI.
 2. Añadir pruebas de contrato para defaults, prioridad y ausencia de props implícitos.
