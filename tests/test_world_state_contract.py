@@ -370,6 +370,18 @@ class WorldStateStoreTests(unittest.TestCase):
         self.assertEqual(self.initial, store.load_snapshot("world-alpha", 1))
         self.assertEqual(self.next_state, store.load_latest("world-alpha"))
 
+    def test_snapshot_store_replay_round_trip_reconstructs_exact_state(self):
+        from world_state_replay import canonical_state_json
+        store = self.Store(self.root)
+        store.save_snapshot(self.initial)
+        store.save_snapshot(self.next_state)
+        restored_initial = store.load_snapshot("world-alpha", 1)
+        restored_final = store.load_snapshot("world-alpha", 2)
+        replayed = self.replay_events(restored_initial, [self.event])
+        self.assertEqual(canonical_state_json(restored_final), canonical_state_json(replayed))
+        self.assertEqual(canonical_state_json(store.load_latest("world-alpha")),
+                         canonical_state_json(replayed))
+
     def test_snapshot_store_versions_are_immutable(self):
         store = self.Store(self.root)
         store.save_snapshot(self.initial)

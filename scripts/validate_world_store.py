@@ -2,6 +2,7 @@
 """Self-test persistent snapshot storage and write a machine-readable evidence report."""
 from __future__ import annotations
 import copy
+import hashlib
 import json
 import sys
 import tempfile
@@ -10,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from world_state_contract import AXES
-from world_state_replay import ReplayError, replay_events
+from world_state_replay import ReplayError, canonical_state_json, replay_events
 from world_state_store import SnapshotStoreError, WorldStateStore
 
 
@@ -52,12 +53,20 @@ def run_self_test(output_path: Path) -> dict:
         store = WorldStateStore(Path(temp) / "store")
         store.save_snapshot(initial)
         store.save_snapshot(version_two)
-        checks["snapshot_round_trip"] = store.load_snapshot(initial["world_id"], 1) == initial
-        checks["latest_version_loaded"] = store.load_latest(initial["world_id"]) == version_two
-        checks["linked_versions_persisted"] = (
-            store.load_snapshot(initial["world_id"], 2)["parent_version"] == 1
-        )
+        restored_initial = store.load_snapshot(initial["world_id"], 1)
+        restored_final = store.load_snapshot(initial["world_id"], 2)
+        replayed_from_disk = replay_events(restored_initial, [event])
+        latest_from_disk = store.load_latest(initial["world_id"])
+        checks["snapshot_round_trip"] = restored_initial == initial
+        checks["latest_version_loaded"] = latest_from_disk == version_two
+        checks["linked_versions_persisted"] = restored_final["parent_version"] == 1
         checks["idempotent_save_is_safe"] = store.save_snapshot(version_two).name == "v00000002.json"
+        checks["replay_after_reload_matches_persisted_version"] = (
+            canonical_state_json(replayed_from_disk) == canonical_state_json(restored_final)
+        )
+        checks["replay_after_reload_matches_latest_history"] = (
+            canonical_state_json(replayed_from_disk) == canonical_state_json(latest_from_disk)
+        )
 
         gap_store = WorldStateStore(Path(temp) / "gap-store")
         first_path = gap_store.save_snapshot(initial)
@@ -102,10 +111,13 @@ def run_self_test(output_path: Path) -> dict:
         "checks": checks,
         "check_count": len(checks),
         "persisted_versions_tested": [1, 2],
+        "replayed_state_sha256": hashlib.sha256(canonical_state_json(replayed_from_disk).encode("utf-8")).hexdigest(),
+        "persisted_latest_sha256": hashlib.sha256(canonical_state_json(latest_from_disk).encode("utf-8")).hexdigest(),
         "limitations": [
             "Single-writer local file store, not a concurrent database.",
             "SHA-256 detects accidental or uncoordinated modification; it is not a signature against an attacker who can rewrite both payload and digest.",
             "Stored snapshots are JSON world states; Blender scene synchronization is not implemented.",
+            "Replay-after-reload verifies a single transform event and one persisted transition; this is not yet a long-horizon event-sourcing service.",
         ],
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)

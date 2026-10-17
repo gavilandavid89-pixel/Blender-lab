@@ -20,7 +20,7 @@ La acción **Blender Headless Lab** ejecuta las comprobaciones rápidas antes de
 
 Ejecución de CI verificada: [run 38830444349](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38830444349) — **success**. Esta ejecución validó los perfiles, el autodiagnóstico del manifiesto, la construcción/render, la validación de movimiento, el manifiesto generado y los artefactos. La suite de regresión general y el validador independiente de movimiento pasaron en [CI run 38831099483](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38831099483). Los nuevos contratos de estado versionado descritos a continuación requieren su propia ejecución verde.
 
-La ejecución completa más reciente verificada es [run 38969021279](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38969021279) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
+La ejecución completa más reciente verificada antes de esta integración es [run 38970829039](https://github.com/gavilandavid89-pixel/Blender-lab/actions/runs/38970829039) — **success**, incluida la comparación determinista y la prueba de aislamiento de cámara.
 
 ## 2. Matriz actual
 
@@ -56,6 +56,7 @@ La ejecución completa más reciente verificada es [run 38969021279](https://git
 | T-028 | Snapshot alterado, versión inmutable, hueco de historial o salto de linaje | `scripts/world_state_store.py` + regresiones de almacenamiento | `artifacts/stlat-world-state-store.json` y pruebas unitarias | Almacén local de un solo escritor; SHA-256 no es firma criptográfica |
 | T-029 | Jerarquía de entidades con padre inexistente, autorreferencia o ciclo | `validate_state` + regresiones de jerarquía | Errores de referencia y ciclo de padre | Valida el grafo estructural; no calcula transformaciones heredadas de Blender |
 | T-030 | Reparentado silencioso o evento de reparentado contradictorio | `validate_transition` + `entity_parent_change_approved` en replay | Pruebas de aprobación, parent anterior/nuevo y ciclo | No recalcula transforms heredadas por jerarquía |
+| T-031 | Replay tras recarga reconstruye exactamente la versión persistida | `WorldStateStore` + `replay_events` + hashes canónicos | `replay_after_reload_matches_persisted_version` y `replayed_state_sha256` en informe de almacén | La integración CI cubre un evento de transformación; no simula un servicio multiusuario ni sincroniza Blender |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
@@ -65,7 +66,7 @@ La ejecución completa más reciente verificada es [run 38969021279](https://git
 | F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Parcial: builds deterministas conservan IDs y transforms; no existe todavía registro persistente de assets/identidades entre cambios intencionales |
 | F-003 | Aplicar una orden explícita que contradice un default y demostrar que gana la orden, registrando el conflicto | Pendiente; contrato documentado, motor M15 no implementado |
 | F-004 | Prompt sin muebles/armas/vehículos: comprobar que no aparecen entidades implícitas | Pendiente; el perfil declara prohibiciones, no hay compilador de prompt integrado |
-| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay determinista y almacén local de snapshots versionados con detección de alteración; falta sincronización con Blender, base de datos multiusuario y eventos de relaciones |
+| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay determinista y almacén local de snapshots versionados; se integra replay tras recarga y comparación exacta de estado. Falta sincronización con Blender, base de datos multiusuario y registro de eventos duradero independiente |
 | F-006 | Misma identidad en varias cámaras/tiempos sin cambiar proporciones ni ID | Pendiente; el personaje actual es proxy |
 | F-007 | Colisiones con cápsulas o volúmenes continuos y prueba de movimiento rápido | Pendiente; el validador actual usa AABB muestreada |
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |
