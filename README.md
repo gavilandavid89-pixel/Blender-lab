@@ -76,7 +76,7 @@ El artefacto `stlat-world3d-output` contiene la escena, las imágenes y los info
 - Colisiones de geometría más precisas y cuerpo del personaje como volumen coherente.
 - Caminos con obstáculos y navegación de varias etapas.
 - Rig/esqueleto, identidad del personaje y memoria entre tomas.
-- Replay completo de eventos de identidad/relaciones y persistencia del estado del mundo.\n- Referencias por fotograma (profundidad, silueta, posición y cámara).
+- Replay de eventos encadenados y persistencia local ya tienen pruebas; falta sincronizar el estado persistido con la escena Blender.\n- Referencias por fotograma (profundidad, silueta, posición y cámara).
 - Comparación automática de fotogramas generados contra el estado del mundo y detección de desviaciones.
 
 No se considera implementada ninguna de estas capacidades hasta que tenga pruebas reproducibles.

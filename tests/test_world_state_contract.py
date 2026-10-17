@@ -169,6 +169,46 @@ class WorldEventReplayTests(unittest.TestCase):
         self.assertEqual(3, result["version"])
         self.assertEqual(["evt-create", "evt-remove"], [e["id"] for e in result["events"]])
 
+    def test_multi_event_replay_reconstructs_each_linked_version(self):
+        from world_state_replay import canonical_state_json
+        move = self.event("evt-chain-move", "transform_updated", "char.001", timestamp=2.0, payload={
+            "transform": {"position": [1.0, 0.0, 0.0], "rotation_euler_rad": [0.0, 0.0, 0.0],
+                          "scale": [1.0, 1.0, 1.0]},
+            "bounds": {"min": [0.5, -0.5, 0.0], "max": [1.5, 0.5, 2.0], "kind": "aabb"}})
+        parent = self.event("evt-chain-parent", "entity_parent_change_approved", "char.001",
+                            timestamp=3.0, previous_parent_id=None, new_parent_id="room.floor")
+        identity = self.event("evt-chain-identity", "identity_change_approved", "char.001",
+                              timestamp=4.0, previous_identity_ref="identity.goku",
+                              new_identity_ref="identity.vegeta",
+                              changed_identity_attributes=["identity_signature"],
+                              payload={"attributes": {"identity_signature": "sig-chain-v2"}})
+        events = [move, parent, identity]
+        first = self.replay_events(self.initial, events[:1])
+        second = self.replay_events(first, events[1:2])
+        chained = self.replay_events(self.initial, events)
+        self.assertEqual((2, 1), (first["version"], first["parent_version"]))
+        self.assertEqual((3, 2), (second["version"], second["parent_version"]))
+        self.assertEqual((4, 3), (chained["version"], chained["parent_version"]))
+        self.assertEqual([1.0, 0.0, 0.0], chained["entities"][1]["transform"]["position"])
+        self.assertEqual("room.floor", chained["entities"][1]["parent_id"])
+        self.assertEqual("identity.vegeta", chained["entities"][1]["identity_ref"])
+        self.assertEqual("sig-chain-v2", chained["entities"][1]["attributes"]["identity_signature"])
+        self.assertEqual([], contract.validate_state(chained))
+        self.assertEqual(canonical_state_json(chained),
+                         canonical_state_json(self.replay_events(second, events[2:])))
+
+    def test_failed_later_event_rejects_entire_replay_without_mutating_input(self):
+        from world_state_replay import canonical_state_json
+        original = copy.deepcopy(self.initial)
+        move = self.event("evt-before-failure", "transform_updated", "char.001", timestamp=2.0, payload={
+            "transform": {"position": [1.0, 0.0, 0.0], "rotation_euler_rad": [0.0, 0.0, 0.0],
+                          "scale": [1.0, 1.0, 1.0]},
+            "bounds": {"min": [0.5, -0.5, 0.0], "max": [1.5, 0.5, 2.0], "kind": "aabb"}})
+        contradictory = self.event("evt-time-reversal", "entity_removed", "camera.main", timestamp=1.5)
+        with self.assertRaisesRegex(self.ReplayError, "timestamp"):
+            self.replay_events(self.initial, [move, contradictory])
+        self.assertEqual(canonical_state_json(original), canonical_state_json(self.initial))
+
     def test_replay_does_not_mutate_input_snapshot_or_events(self):
         original = copy.deepcopy(self.initial)
         events = [self.event("evt-move", "transform_updated", "char.001", payload={

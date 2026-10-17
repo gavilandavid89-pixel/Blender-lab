@@ -57,6 +57,7 @@ La ejecución completa más reciente verificada antes de esta integración es [r
 | T-029 | Jerarquía de entidades con padre inexistente, autorreferencia o ciclo | `validate_state` + regresiones de jerarquía | Errores de referencia y ciclo de padre | Valida el grafo estructural; no calcula transformaciones heredadas de Blender |
 | T-030 | Reparentado silencioso o evento de reparentado contradictorio | `validate_transition` + `entity_parent_change_approved` en replay | Pruebas de aprobación, parent anterior/nuevo y ciclo | No recalcula transforms heredadas por jerarquía |
 | T-031 | Replay tras recarga reconstruye exactamente la versión persistida | `WorldStateStore` + `replay_events` + hashes canónicos | `replay_after_reload_matches_persisted_version` y `replayed_state_sha256` en informe de almacén | La integración CI cubre un evento de transformación; no simula un servicio multiusuario ni sincroniza Blender |
+| T-032 | Replay de varios eventos encadenados conserva versiones intermedias y rechaza una secuencia contradictoria sin mutar el snapshot de entrada | `WorldEventReplayTests`: transformación → reparentado → cambio de identidad; prueba negativa de timestamp regresivo | Suite `python3 -m unittest discover -s tests -v` en CI | Replay en memoria; todavía no sincroniza el estado con Blender ni aporta autorización criptográfica |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
