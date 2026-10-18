@@ -302,12 +302,18 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
             checks["bounds_mismatch_rejected_and_rolled_back"] = _near(obj.location, at_moved)
 
         collision_entity = copy.deepcopy(moved)
-        collision_pos = [2.45, 1.20, 0.90]
+        # End beyond the bed's AABB but choose a low enough height that the
+        # straight path intersects the mattress before reaching this free endpoint.
+        collision_pos = [3.60, 1.20, 0.86]
         delta = [collision_pos[i] - moved_pos[i] for i in range(3)]
         collision_entity["transform"]["position"] = collision_pos
         collision_entity["bounds"] = {
             **_shift_bounds(collision_entity["bounds"], delta), "kind": "aabb"
         }
+        endpoint_hits = _collision_hits(
+            obj, collision_entity["role"], collision_entity["bounds"], scene, bpy
+        )
+        checks["collision_test_endpoint_is_clear"] = len(endpoint_hits) == 0
         try:
             apply_snapshot(_snapshot(collision_entity), scene, bpy)
             checks["solid_path_collision_rejected_and_rolled_back"] = False
