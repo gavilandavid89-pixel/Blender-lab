@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Safely apply a validated ST-LAT snapshot to existing Blender mesh objects."""
 from __future__ import annotations
-import copy, json, math, sys, tempfile
+import argparse, copy, json, math, sys, tempfile
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from world_state_contract import AXES, validate_state  # noqa: E402
 from world_state_replay import canonical_state_json, replay_events  # noqa: E402
-from world_state_store import WorldStateStore  # noqa: E402
+from world_state_store import SnapshotStoreError, WorldStateStore  # noqa: E402
 DEFAULT_REPORT = ROOT / "artifacts/stlat-world-state-blender-sync.json"
 TOL = 1e-4
 
@@ -340,6 +340,37 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
                 "The bridge never saves the .blend automatically."]}
 
 
+
+
+def load_snapshot_source(
+    *, snapshot_path: Path | None = None, store_root: Path | None = None,
+    world_id: str | None = None, version: int | None = None
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load a snapshot either from JSON or from the immutable versioned store."""
+    if (snapshot_path is None) == (store_root is None):
+        raise BlenderSyncError("provide exactly one source: snapshot_path or store_root")
+    if snapshot_path is not None:
+        if world_id is not None or version is not None:
+            raise BlenderSyncError("world_id/version may only be used with store_root")
+        try:
+            snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise BlenderSyncError(f"cannot read snapshot file: {exc}") from exc
+        return snapshot, {"kind": "file", "path": str(snapshot_path)}
+    if not isinstance(world_id, str) or not world_id.strip():
+        raise BlenderSyncError("world_id is required when loading from store_root")
+    if version is not None and (not isinstance(version, int) or isinstance(version, bool) or version < 1):
+        raise BlenderSyncError("version must be a positive integer")
+    try:
+        store = WorldStateStore(Path(store_root))
+        snapshot = store.load_latest(world_id) if version is None else store.load_snapshot(world_id, version)
+    except SnapshotStoreError as exc:
+        raise BlenderSyncError(f"cannot load persisted snapshot: {exc}") from exc
+    return snapshot, {
+        "kind": "store", "root": str(store_root), "world_id": world_id,
+        "version": snapshot.get("version"), "selection": "latest" if version is None else "explicit",
+    }
+
 def _write_report(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
@@ -347,22 +378,32 @@ def _write_report(path: Path, report: dict[str, Any]) -> None:
 
 def main() -> None:
     import bpy
-    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    report_path = Path(args[args.index("--report") + 1]) if "--report" in args else DEFAULT_REPORT
-    if "--self-test" in args:
+    raw_args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    parser = argparse.ArgumentParser(description="Apply a validated ST-LAT snapshot to Blender without saving the scene.")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--snapshot", type=Path, help="read a world-state JSON snapshot")
+    source.add_argument("--store-root", type=Path, help="load from the persistent WorldStateStore directory")
+    parser.add_argument("--world-id", help="world ID to load from the snapshot store")
+    parser.add_argument("--version", type=int, help="explicit stored version; default is latest")
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT, help="diagnostic report output path")
+    parser.add_argument("--self-test", action="store_true", help="run the Blender integration self-test")
+    args = parser.parse_args(raw_args)
+    report_path = args.report
+    if args.self_test:
         report = run_self_test(bpy.context.scene, bpy)
         _write_report(report_path, report)
         print("STLAT_WORLD_STATE_BLENDER_SYNC=" + json.dumps(report, sort_keys=True))
         if report["status"] != "passed":
             raise RuntimeError("ST-LAT Blender sync self-test failed")
         return
-    if "--snapshot" not in args:
-        raise SystemExit("Usage: blender --background scene.blend --python scripts/world3d_sync_state.py -- --snapshot state.json [--report report.json]")
-    path = Path(args[args.index("--snapshot") + 1])
     try:
-        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        snapshot, source_info = load_snapshot_source(
+            snapshot_path=args.snapshot, store_root=args.store_root,
+            world_id=args.world_id, version=args.version
+        )
         report = apply_snapshot(snapshot, bpy.context.scene, bpy)
-    except (OSError, json.JSONDecodeError, BlenderSyncError) as exc:
+        report["source"] = source_info
+    except BlenderSyncError as exc:
         report = {"schema": "stlat.world-state-blender-sync-report.v1", "status": "failed",
                   "error": str(exc), "saved_blend": False}
         _write_report(report_path, report)
