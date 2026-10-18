@@ -14,7 +14,7 @@ Orden de ejecución:
 6. Construye la escena desde `scripts/world3d_probe.py`.
 7. Abre el archivo guardado y prueba recorridos con `scripts/world3d_validate_motion.py`.
 8. Valida el informe persistido de movimiento y el manifiesto de escena con validadores independientes.
-9. Prueba el puente de sincronización de estado sobre la escena Blender guardada: preflight, aplicación de transform, AABB evaluada y rollback ante datos contradictorios.
+9. Prueba la ruta evento aprobado → replay → persistencia → recarga → aplicación en Blender, además del preflight, AABB evaluada y rollback ante datos contradictorios.
 10. Comprueba que los archivos de salida existen y no están vacíos.
 11. Publica `stlat-world3d-output`, incluso si un paso anterior falla, para conservar diagnósticos disponibles.
 
@@ -33,7 +33,7 @@ Los pasos rápidos se ejecutan antes de descargar Blender para detectar errores 
 | `exit-code.txt` | Código de la construcción | `0` indica que la construcción terminó correctamente |
 | `motion-validation-exit-code.txt` | Código de la validación de movimiento | `0` indica que el script de movimiento terminó correctamente |
 
-| `stlat-world-state-blender-sync.json` | Resultado del puente estado persistente → Blender | `checks`, `applied_entity_ids` y el estado de rechazo/rollback |
+| `stlat-world-state-blender-sync.json` | Resultado de la ruta evento → persistencia → recarga → Blender | `checks`, `applied_entity_ids` y el estado de rechazo/rollback |
 
 Los artefactos de Actions se conservan durante 14 días. Si un paso falla, abre la ejecución fallida y descarga el artefacto si está disponible; el paso de publicación usa `if: always()` para intentar conservar los archivos parciales.
 

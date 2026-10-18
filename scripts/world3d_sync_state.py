@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Safely apply a validated ST-LAT snapshot to existing Blender mesh objects."""
 from __future__ import annotations
-import copy, json, math, sys
+import copy, json, math, sys, tempfile
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from world_state_contract import AXES, validate_state  # noqa: E402
+from world_state_replay import canonical_state_json, replay_events  # noqa: E402
+from world_state_store import WorldStateStore  # noqa: E402
 DEFAULT_REPORT = ROOT / "artifacts/stlat-world-state-blender-sync.json"
 TOL = 1e-4
 
@@ -161,17 +163,48 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         raise BlenderSyncError(f"expected exactly one character.torso mesh; found {len(candidates)}")
     obj = candidates[0]
     original = (list(obj.location), list(obj.rotation_euler), list(obj.scale))
+    original_entity = _entity(obj, bpy)
+    initial_state = _snapshot(original_entity)
     original_bounds = _aabb(obj, bpy)
     moved_pos = [float(obj.location[0]) + 0.25, float(obj.location[1]), float(obj.location[2])]
     moved = _entity(obj, bpy, position=moved_pos, shift_x=0.25)
     other_before = _other_object_transforms(scene, obj)
     checks: dict[str, bool] = {}
     try:
-        applied = apply_snapshot(_snapshot(moved), scene, bpy)
+        # Exercise the real path: approved event -> replay -> immutable disk snapshots
+        # -> reload latest -> apply the restored state to Blender.
+        event = {
+            "id": "evt-blender-sync-move",
+            "type": "transform_updated",
+            "timestamp": 2.0,
+            "actor_id": "blender-sync-self-test",
+            "target_id": moved["id"],
+            "approved": True,
+            "payload": {
+                "transform": copy.deepcopy(moved["transform"]),
+                "bounds": copy.deepcopy(moved["bounds"]),
+            },
+        }
+        replayed = replay_events(initial_state, [event])
+        with tempfile.TemporaryDirectory(prefix="stlat-blender-sync-") as temp:
+            store = WorldStateStore(Path(temp) / "store")
+            store.save_snapshot(initial_state)
+            store.save_snapshot(replayed)
+            disk_initial = store.load_snapshot(initial_state["world_id"], 1)
+            disk_latest = store.load_latest(initial_state["world_id"])
+            replayed_from_disk = replay_events(disk_initial, [event])
+            checks["persisted_replay_matches_latest"] = (
+                canonical_state_json(replayed_from_disk) == canonical_state_json(disk_latest)
+            )
+            applied = apply_snapshot(disk_latest, scene, bpy)
+            checks["persisted_replay_applied_to_blender"] = (
+                applied["status"] == "success"
+                and _near(obj.location, moved_pos)
+                and _bounds_match(_aabb(obj, bpy), moved["bounds"])
+            )
         checks["non_target_objects_unchanged"] = _other_object_transforms(scene, obj) == other_before
         checks["valid_transform_applied_and_bounds_verified"] = (
-            applied["status"] == "success" and _near(obj.location, moved_pos)
-            and _bounds_match(_aabb(obj, bpy), moved["bounds"])
+            _near(obj.location, moved_pos) and _bounds_match(_aabb(obj, bpy), moved["bounds"])
         )
         at_moved = list(obj.location)
         wrong_role = copy.deepcopy(moved)
@@ -188,10 +221,7 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
             checks["bounds_mismatch_rejected_and_rolled_back"] = False
         except BlenderSyncError:
             checks["bounds_mismatch_rejected_and_rolled_back"] = _near(obj.location, at_moved)
-        restored = _entity(obj, bpy, position=original[0], shift_x=-0.25)
-        restored["transform"]["rotation_euler_rad"] = original[1]
-        restored["transform"]["scale"] = original[2]
-        apply_snapshot(_snapshot(restored), scene, bpy)
+        apply_snapshot(initial_state, scene, bpy)
         checks["original_scene_transform_restored"] = (
             _near(obj.location, original[0]) and _near(obj.rotation_euler, original[1])
             and _near(obj.scale, original[2]) and _bounds_match(_aabb(obj, bpy), original_bounds)
@@ -201,7 +231,7 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         bpy.context.view_layer.update()
     return {"schema": "stlat.world-state-blender-sync-report.v1",
             "status": "passed" if all(checks.values()) else "failed",
-            "method": "saved-scene integration test: apply valid transform, verify non-target objects, reject role/AABB mismatch, restore original",
+            "method": "saved-scene end-to-end test: approved event replay, persist/reload snapshot, apply to Blender, verify non-target objects and rollback failures",
             "scene_file": "artifacts/stlat-world3d.blend", "target_id": _id(obj),
             "checks": checks, "check_count": len(checks),
             "limitations": ["Existing unparented MESH objects only; stable ID and semantic role must match.",
