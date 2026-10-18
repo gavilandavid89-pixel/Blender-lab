@@ -60,6 +60,22 @@ def _bounds_match(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
     return _near(actual.get("min"), expected.get("min")) and _near(actual.get("max"), expected.get("max"))
 
 
+def _aabb_overlaps(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    # Touching faces are allowed; positive-volume overlap beyond tolerance is a collision.
+    return all(
+        float(a["max"][i]) > float(b["min"][i]) + TOL
+        and float(a["min"][i]) < float(b["max"][i]) - TOL
+        for i in range(3)
+    )
+
+
+def _shift_bounds(bounds: dict[str, Any], delta: list[float]) -> dict[str, Any]:
+    return {
+        key: [float(value) + float(delta[i]) for i, value in enumerate(bounds[key])]
+        for key in ("min", "max")
+    }
+
+
 def _transform_match(obj: Any, t: dict[str, Any]) -> bool:
     return _near(obj.location, t["position"]) and _near(obj.rotation_euler, t["rotation_euler_rad"]) and _near(obj.scale, t["scale"])
 
@@ -106,8 +122,30 @@ def apply_snapshot(snapshot: Any, scene: Any, bpy: Any) -> dict[str, Any]:
         for entity, obj in targets:
             if not _transform_match(obj, entity["transform"]):
                 failures.append(f"{entity['id']}: transform read-back mismatch")
-            elif not _bounds_match(_aabb(obj, bpy), entity["bounds"]):
+                continue
+            actual_bounds = _aabb(obj, bpy)
+            if not _bounds_match(actual_bounds, entity["bounds"]):
                 failures.append(f"{entity['id']}: evaluated AABB differs from snapshot")
+                continue
+            if entity.get("collision") == "solid":
+                role = entity["role"]
+                for obstacle in scene.objects:
+                    if obstacle is obj or obstacle.type != "MESH":
+                        continue
+                    obstacle_role = obstacle.get("stlat_role", "unclassified")
+                    if obstacle_role.startswith("debug."):
+                        continue
+                    if role.startswith("character.") and obstacle_role.startswith("character."):
+                        continue
+                    if obstacle.get("stlat_collision") in {"none", "trigger"}:
+                        continue
+                    obstacle_bounds = _aabb(obstacle, bpy)
+                    if _aabb_overlaps(actual_bounds, obstacle_bounds):
+                        obstacle_label = _id(obstacle) or obstacle.name
+                        failures.append(
+                            f"{entity['id']}: solid AABB overlaps obstacle {obstacle_label!r} "
+                            f"(role={obstacle_role!r})"
+                        )
         if failures:
             raise BlenderSyncError("; ".join(failures))
     except Exception:
@@ -221,6 +259,21 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
             checks["bounds_mismatch_rejected_and_rolled_back"] = False
         except BlenderSyncError:
             checks["bounds_mismatch_rejected_and_rolled_back"] = _near(obj.location, at_moved)
+
+        collision_entity = copy.deepcopy(moved)
+        collision_pos = [2.45, 1.20, 0.90]
+        delta = [collision_pos[i] - moved_pos[i] for i in range(3)]
+        collision_entity["transform"]["position"] = collision_pos
+        collision_entity["bounds"] = {
+            **_shift_bounds(collision_entity["bounds"], delta), "kind": "aabb"
+        }
+        try:
+            apply_snapshot(_snapshot(collision_entity), scene, bpy)
+            checks["solid_collision_rejected_and_rolled_back"] = False
+        except BlenderSyncError as exc:
+            checks["solid_collision_rejected_and_rolled_back"] = (
+                "Bed.Mattress" in str(exc) and _near(obj.location, at_moved)
+            )
         apply_snapshot(initial_state, scene, bpy)
         checks["original_scene_transform_restored"] = (
             _near(obj.location, original[0]) and _near(obj.rotation_euler, original[1])
@@ -231,11 +284,11 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         bpy.context.view_layer.update()
     return {"schema": "stlat.world-state-blender-sync-report.v1",
             "status": "passed" if all(checks.values()) else "failed",
-            "method": "saved-scene end-to-end test: approved event replay, persist/reload snapshot, apply to Blender, verify non-target objects and rollback failures",
+            "method": "saved-scene end-to-end test: approved event replay, persist/reload/apply, non-target isolation, role/AABB rejection, solid-overlap rejection and rollback",
             "scene_file": "artifacts/stlat-world3d.blend", "target_id": _id(obj),
             "checks": checks, "check_count": len(checks),
             "limitations": ["Existing unparented MESH objects only; stable ID and semantic role must match.",
-                "AABB must match evaluated Blender geometry after transform.", "No creation, deletion, reparenting, camera/light or animation sync.",
+                "AABB must match evaluated Blender geometry after transform; solid collision checks use final-pose AABBs only.", "No creation, deletion, reparenting, camera/light or animation sync.",
                 "The bridge never saves the .blend automatically."]}
 
 

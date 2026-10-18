@@ -15,7 +15,7 @@ Construir una escena 3D reproducible que funcione como fuente de verdad espacial
 - `stlat-world3d-motion-validation.json`: resultado de pruebas de recorrido seguro, colisión deliberada con la cama y salida deliberada de los límites.
 - `stlat-world3d-camera-isolation.json`: evidencia de una prueba sobre la escena guardada que cambia cámara, transformación y lente y compara transformaciones y geometría evaluada de todos los objetos no cámara.
 - `stlat-world3d-determinism.json`: comparación de dos construcciones independientes del mundo para verificar IDs, roles, transformaciones, dimensiones, AABB y hashes de geometría de malla estables.\n- `stlat-world-state-replay.json`: evidencia de replay de eventos aprobados (movimiento, creación/eliminación, rol e identidad), linaje de versiones, rechazo de eventos no aprobados y protección de la entrada.\n- `stlat-world-state-store.json`: evidencia del almacenamiento de snapshots inmutables, continuidad de versiones, detección de alteraciones y replay de una cadena de tres eventos sobre cuatro versiones persistidas.
-- `stlat-world-state-blender-sync.json`: prueba de integración que reproduce un evento aprobado, persiste y recarga el snapshot resultante, lo aplica a una malla de Blender, verifica su AABB, rechaza un rol incorrecto y comprueba rollback ante bounds contradictorios.
+- `stlat-world-state-blender-sync.json`: prueba de integración que reproduce un evento aprobado, persiste y recarga el snapshot resultante, lo aplica a una malla de Blender, verifica su AABB, rechaza roles incorrectos, detecta solapamiento AABB con la cama y comprueba rollback ante bounds o colisiones contradictorios.
 - `blender.log`: registro de ejecución.
 
 ## Contrato espacial inicial
@@ -77,7 +77,7 @@ El artefacto `stlat-world3d-output` contiene la escena, las imágenes y los info
 - Colisiones de geometría más precisas y cuerpo del personaje como volumen coherente.
 - Caminos con obstáculos y navegación de varias etapas.
 - Rig/esqueleto, identidad del personaje y memoria entre tomas.
-- Replay de eventos encadenados, persistencia local y una primera ruta evento→snapshot persistido→recarga→Blender ya tienen pruebas para una malla. El puente solo admite mallas existentes sin padre y no guarda la escena automáticamente.\n- Referencias por fotograma (profundidad, silueta, posición y cámara).
+- Replay de eventos encadenados, persistencia local y una primera ruta evento→snapshot persistido→recarga→Blender ya tienen pruebas para una malla. El puente solo admite mallas existentes sin padre, usa AABB para detectar solapamientos en la pose final y no guarda la escena automáticamente.\n- Referencias por fotograma (profundidad, silueta, posición y cámara).
 - Comparación automática de fotogramas generados contra el estado del mundo y detección de desviaciones.
 
 No se considera implementada ninguna de estas capacidades hasta que tenga pruebas reproducibles.
