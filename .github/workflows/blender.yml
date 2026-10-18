@@ -135,6 +135,15 @@ jobs:
           "$BLENDER_BIN" --background artifacts/stlat-world3d.blend --python scripts/world3d_sync_state.py -- --self-test 2>&1 | tee -a blender.log
           test -s artifacts/stlat-world-state-blender-sync.json
           cat artifacts/stlat-world-state-blender-sync.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/stlat-world-state-blender-sync.json").read_text(encoding="utf-8"))
+          checks = report.get("checks")
+          if report.get("status") != "passed" or not isinstance(checks, dict) or not checks or not all(value is True for value in checks.values()):
+              raise SystemExit("WORLD_STATE_BLENDER_SYNC_REPORT_VALIDATION=FAIL: " + json.dumps(report, sort_keys=True))
+          print(f"WORLD_STATE_BLENDER_SYNC_REPORT_VALIDATION=PASS ({len(checks)} checks)")
+          PY
 
       - name: Self-test camera-isolation report validator
         run: python3 scripts/validate_camera_isolation_report.py --self-test

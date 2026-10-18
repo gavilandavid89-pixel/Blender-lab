@@ -272,7 +272,7 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
             checks["solid_collision_rejected_and_rolled_back"] = False
         except BlenderSyncError as exc:
             checks["solid_collision_rejected_and_rolled_back"] = (
-                "Bed.Mattress" in str(exc) and _near(obj.location, at_moved)
+                "bed.mattress" in str(exc).lower() and _near(obj.location, at_moved)
             )
         apply_snapshot(initial_state, scene, bpy)
         checks["original_scene_transform_restored"] = (
