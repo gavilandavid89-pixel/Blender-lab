@@ -76,6 +76,23 @@ def _shift_bounds(bounds: dict[str, Any], delta: list[float]) -> dict[str, Any]:
     }
 
 
+def _collision_hits(obj: Any, role: str, bounds: dict[str, Any], scene: Any, bpy: Any) -> list[tuple[str, str]]:
+    hits = []
+    for obstacle in scene.objects:
+        if obstacle is obj or obstacle.type != "MESH":
+            continue
+        obstacle_role = obstacle.get("stlat_role", "unclassified")
+        if obstacle_role.startswith("debug."):
+            continue
+        if role.startswith("character.") and obstacle_role.startswith("character."):
+            continue
+        if obstacle.get("stlat_collision") in {"none", "trigger"}:
+            continue
+        if _aabb_overlaps(bounds, _aabb(obstacle, bpy)):
+            hits.append((_id(obstacle) or obstacle.name, obstacle_role))
+    return hits
+
+
 def _transform_match(obj: Any, t: dict[str, Any]) -> bool:
     return _near(obj.location, t["position"]) and _near(obj.rotation_euler, t["rotation_euler_rad"]) and _near(obj.scale, t["scale"])
 
@@ -119,6 +136,42 @@ def apply_snapshot(snapshot: Any, scene: Any, bpy: Any) -> dict[str, Any]:
             obj.location, obj.rotation_euler, obj.scale = t["position"], t["rotation_euler_rad"], t["scale"]
         bpy.context.view_layer.update()
         failures = []
+        # Sample the swept transform path at no more than 0.1 world units between
+        # samples. This catches tunnelling through obstacles when the final pose is free.
+        for entity, obj in targets:
+            if entity.get("collision") != "solid":
+                continue
+            start_loc, start_rot, start_scale = original[entity["id"]]
+            target = entity["transform"]
+            deltas = [
+                max(abs(float(target["position"][i]) - float(start_loc[i])) for i in range(3)),
+                max(abs(float(target["rotation_euler_rad"][i]) - float(start_rot[i])) for i in range(3)),
+                max(abs(float(target["scale"][i]) - float(start_scale[i])) for i in range(3)),
+            ]
+            steps = max(1, *(int(math.ceil(delta / 0.1)) for delta in deltas))
+            if steps > 256:
+                failures.append(f"{entity['id']}: swept path needs {steps} samples; safety limit is 256")
+                continue
+            for sample in range(1, steps):
+                t = sample / steps
+                obj.location = [start_loc[i] + (float(target["position"][i]) - start_loc[i]) * t for i in range(3)]
+                obj.rotation_euler = [start_rot[i] + (float(target["rotation_euler_rad"][i]) - start_rot[i]) * t for i in range(3)]
+                obj.scale = [start_scale[i] + (float(target["scale"][i]) - start_scale[i]) * t for i in range(3)]
+                bpy.context.view_layer.update()
+                path_bounds = _aabb(obj, bpy)
+                hits = _collision_hits(obj, entity["role"], path_bounds, scene, bpy)
+                if hits:
+                    obstacle_id, obstacle_role = hits[0]
+                    failures.append(
+                        f"{entity['id']}: swept path intersects obstacle {obstacle_id!r} "
+                        f"(role={obstacle_role!r}) at sample {sample}/{steps}"
+                    )
+                    break
+            obj.location = target["position"]
+            obj.rotation_euler = target["rotation_euler_rad"]
+            obj.scale = target["scale"]
+            bpy.context.view_layer.update()
+
         for entity, obj in targets:
             if not _transform_match(obj, entity["transform"]):
                 failures.append(f"{entity['id']}: transform read-back mismatch")
@@ -128,24 +181,12 @@ def apply_snapshot(snapshot: Any, scene: Any, bpy: Any) -> dict[str, Any]:
                 failures.append(f"{entity['id']}: evaluated AABB differs from snapshot")
                 continue
             if entity.get("collision") == "solid":
-                role = entity["role"]
-                for obstacle in scene.objects:
-                    if obstacle is obj or obstacle.type != "MESH":
-                        continue
-                    obstacle_role = obstacle.get("stlat_role", "unclassified")
-                    if obstacle_role.startswith("debug."):
-                        continue
-                    if role.startswith("character.") and obstacle_role.startswith("character."):
-                        continue
-                    if obstacle.get("stlat_collision") in {"none", "trigger"}:
-                        continue
-                    obstacle_bounds = _aabb(obstacle, bpy)
-                    if _aabb_overlaps(actual_bounds, obstacle_bounds):
-                        obstacle_label = _id(obstacle) or obstacle.name
-                        failures.append(
-                            f"{entity['id']}: solid AABB overlaps obstacle {obstacle_label!r} "
-                            f"(role={obstacle_role!r})"
-                        )
+                hits = _collision_hits(obj, entity["role"], actual_bounds, scene, bpy)
+                for obstacle_id, obstacle_role in hits:
+                    failures.append(
+                        f"{entity['id']}: solid AABB overlaps obstacle {obstacle_id!r} "
+                        f"(role={obstacle_role!r})"
+                    )
         if failures:
             raise BlenderSyncError("; ".join(failures))
     except Exception:
@@ -269,10 +310,11 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         }
         try:
             apply_snapshot(_snapshot(collision_entity), scene, bpy)
-            checks["solid_collision_rejected_and_rolled_back"] = False
+            checks["solid_path_collision_rejected_and_rolled_back"] = False
         except BlenderSyncError as exc:
-            checks["solid_collision_rejected_and_rolled_back"] = (
-                "bed.mattress" in str(exc).lower() and _near(obj.location, at_moved)
+            checks["solid_path_collision_rejected_and_rolled_back"] = (
+                "bed.mattress" in str(exc).lower() and "swept path" in str(exc).lower()
+                and _near(obj.location, at_moved)
             )
         apply_snapshot(initial_state, scene, bpy)
         checks["original_scene_transform_restored"] = (
@@ -288,7 +330,7 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
             "scene_file": "artifacts/stlat-world3d.blend", "target_id": _id(obj),
             "checks": checks, "check_count": len(checks),
             "limitations": ["Existing unparented MESH objects only; stable ID and semantic role must match.",
-                "AABB must match evaluated Blender geometry after transform; solid collision checks use final-pose AABBs only.", "No creation, deletion, reparenting, camera/light or animation sync.",
+                "AABB must match evaluated Blender geometry; solid movement paths are sampled at up to 0.1-unit spacing with a 256-sample cap, plus final-pose AABB checks.", "No creation, deletion, reparenting, camera/light or animation sync.",
                 "The bridge never saves the .blend automatically."]}
 
 

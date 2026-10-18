@@ -14,7 +14,7 @@ Orden de ejecución:
 6. Construye la escena desde `scripts/world3d_probe.py`.
 7. Abre el archivo guardado y prueba recorridos con `scripts/world3d_validate_motion.py`.
 8. Valida el informe persistido de movimiento y el manifiesto de escena con validadores independientes.
-9. Prueba la ruta evento aprobado → replay → persistencia → recarga → aplicación en Blender, además del preflight, AABB evaluada, rechazo de solapamiento sólido con un obstáculo y rollback ante datos contradictorios.
+9. Prueba la ruta evento aprobado → replay → persistencia → recarga → aplicación en Blender, además del preflight, AABB evaluada, rechazo de una trayectoria que atraviesa un obstáculo aunque el destino esté libre, además del rollback ante datos contradictorios.
 10. Comprueba que los archivos de salida existen y no están vacíos.
 11. Publica `stlat-world3d-output`, incluso si un paso anterior falla, para conservar diagnósticos disponibles.
 
@@ -87,4 +87,4 @@ La CI prueba el laboratorio 3D actual. No prueba aún identidad visual persisten
 
 `scripts/world3d_sync_state.py` acepta un snapshot con `--snapshot state.json`. Antes de tocar objetos, valida el contrato del estado, la unicidad de IDs de escena, la correspondencia de IDs y roles y que los objetivos sean mallas sin padre. Aplica solo transforms; después verifica las transforms leídas y los bounds AABB evaluados. Si una comprobación posterior falla, restaura los transforms originales.
 
-El puente no crea ni elimina objetos, no cambia jerarquías, no sincroniza cámaras/luces ni animación, y **no guarda el archivo .blend**. Para entidades sólidas también comprueba solapamientos AABB en la pose final y rechaza una colisión; esto no es detección continua entre fotogramas ni una simulación física completa. La CI vuelve a leer el informe con Python estándar y exige `status=passed` y que cada check sea exactamente `true`; esto evita depender únicamente del código de salida de Blender. La autoprueba integrada no sustituye pruebas de escenas complejas ni autoriza scripts arbitrarios.
+El puente no crea ni elimina objetos, no cambia jerarquías, no sincroniza cámaras/luces ni animación, y **no guarda el archivo .blend**. Para entidades sólidas muestrea la trayectoria entre transforms con una separación máxima de 0,1 unidades (límite de 256 muestras) y comprueba también la AABB final. Es más seguro que revisar solo el destino, pero no es detección continua ni una simulación física completa. La CI vuelve a leer el informe con Python estándar y exige `status=passed` y que cada check sea exactamente `true`; esto evita depender únicamente del código de salida de Blender. La autoprueba integrada no sustituye pruebas de escenas complejas ni autoriza scripts arbitrarios.
