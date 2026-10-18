@@ -23,7 +23,19 @@ def _vec3(value: Any) -> bool:
 
 
 def _near(a: Any, b: Any) -> bool:
-    return _vec3(a) and _vec3(b) and all(abs(float(a[i]) - float(b[i])) <= TOL for i in range(3))
+    # Blender's mathutils.Vector is sequence-like but is not a list/tuple.
+    try:
+        if len(a) != 3 or len(b) != 3:
+            return False
+        av, bv = [a[i] for i in range(3)], [b[i] for i in range(3)]
+    except (TypeError, KeyError, IndexError):
+        return False
+    return all(
+        isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+        and isinstance(y, (int, float)) and not isinstance(y, bool) and math.isfinite(y)
+        and abs(float(x) - float(y)) <= TOL
+        for x, y in zip(av, bv)
+    )
 
 
 def _id(obj: Any) -> str | None:
@@ -132,6 +144,17 @@ def _snapshot(entity: dict[str, Any]) -> dict[str, Any]:
             "timestamp": 1.0, "entities": [entity], "events": []}
 
 
+def _other_object_transforms(scene: Any, target: Any) -> dict[str, tuple[tuple[float, ...], ...]]:
+    return {
+        obj.name: (
+            tuple(float(v) for v in obj.location),
+            tuple(float(v) for v in obj.rotation_euler),
+            tuple(float(v) for v in obj.scale),
+        )
+        for obj in scene.objects if obj is not target
+    }
+
+
 def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
     candidates = [o for o in scene.objects if o.type == "MESH" and o.get("stlat_role") == "character.torso"]
     if len(candidates) != 1:
@@ -141,9 +164,11 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
     original_bounds = _aabb(obj, bpy)
     moved_pos = [float(obj.location[0]) + 0.25, float(obj.location[1]), float(obj.location[2])]
     moved = _entity(obj, bpy, position=moved_pos, shift_x=0.25)
+    other_before = _other_object_transforms(scene, obj)
     checks: dict[str, bool] = {}
     try:
         applied = apply_snapshot(_snapshot(moved), scene, bpy)
+        checks["non_target_objects_unchanged"] = _other_object_transforms(scene, obj) == other_before
         checks["valid_transform_applied_and_bounds_verified"] = (
             applied["status"] == "success" and _near(obj.location, moved_pos)
             and _bounds_match(_aabb(obj, bpy), moved["bounds"])
@@ -176,7 +201,7 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         bpy.context.view_layer.update()
     return {"schema": "stlat.world-state-blender-sync-report.v1",
             "status": "passed" if all(checks.values()) else "failed",
-            "method": "saved-scene integration test: apply valid transform, reject role/AABB mismatch, restore original",
+            "method": "saved-scene integration test: apply valid transform, verify non-target objects, reject role/AABB mismatch, restore original",
             "scene_file": "artifacts/stlat-world3d.blend", "target_id": _id(obj),
             "checks": checks, "check_count": len(checks),
             "limitations": ["Existing unparented MESH objects only; stable ID and semantic role must match.",
