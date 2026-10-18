@@ -14,8 +14,9 @@ Orden de ejecución:
 6. Construye la escena desde `scripts/world3d_probe.py`.
 7. Abre el archivo guardado y prueba recorridos con `scripts/world3d_validate_motion.py`.
 8. Valida el informe persistido de movimiento y el manifiesto de escena con validadores independientes.
-9. Comprueba que los archivos de salida existen y no están vacíos.
-10. Publica `stlat-world3d-output`, incluso si un paso anterior falla, para conservar diagnósticos disponibles.
+9. Prueba el puente de sincronización de estado sobre la escena Blender guardada: preflight, aplicación de transform, AABB evaluada y rollback ante datos contradictorios.
+10. Comprueba que los archivos de salida existen y no están vacíos.
+11. Publica `stlat-world3d-output`, incluso si un paso anterior falla, para conservar diagnósticos disponibles.
 
 Los pasos rápidos se ejecutan antes de descargar Blender para detectar errores de contrato sin gastar tiempo de render. El job tiene un límite de 20 minutos. Los cambios en `scripts/**`, `tests/**`, `docs/**`, `README.md` o el workflow activan CI; también se puede iniciar manualmente con **Actions → Blender Headless Lab → Run workflow**.
 
@@ -31,6 +32,8 @@ Los pasos rápidos se ejecutan antes de descargar Blender para detectar errores 
 | `blender.log` | Salida de Blender y errores | Primer traceback y último bloque del log |
 | `exit-code.txt` | Código de la construcción | `0` indica que la construcción terminó correctamente |
 | `motion-validation-exit-code.txt` | Código de la validación de movimiento | `0` indica que el script de movimiento terminó correctamente |
+
+| `stlat-world-state-blender-sync.json` | Resultado del puente estado persistente → Blender | `checks`, `applied_entity_ids` y el estado de rechazo/rollback |
 
 Los artefactos de Actions se conservan durante 14 días. Si un paso falla, abre la ejecución fallida y descarga el artefacto si está disponible; el paso de publicación usa `if: always()` para intentar conservar los archivos parciales.
 
@@ -78,3 +81,10 @@ Los artefactos de Actions se conservan durante 14 días. Si un paso falla, abre 
 ## Estado de alcance
 
 La CI prueba el laboratorio 3D actual. No prueba aún identidad visual persistente, replay de memoria, obediencia a prompts, generación de vídeo, ni evaluación temporal de fotogramas. Esas capacidades requieren sus propios módulos, datos de prueba y criterios de aprobación antes de declararse implementadas.
+
+
+## Puente inicial de estado hacia Blender
+
+`scripts/world3d_sync_state.py` acepta un snapshot con `--snapshot state.json`. Antes de tocar objetos, valida el contrato del estado, la unicidad de IDs de escena, la correspondencia de IDs y roles y que los objetivos sean mallas sin padre. Aplica solo transforms; después verifica las transforms leídas y los bounds AABB evaluados. Si una comprobación posterior falla, restaura los transforms originales.
+
+El puente no crea ni elimina objetos, no cambia jerarquías, no sincroniza cámaras/luces ni animación, y **no guarda el archivo .blend**. La autoprueba integrada en CI no sustituye pruebas de escenas complejas ni autoriza scripts arbitrarios.

@@ -1,6 +1,6 @@
 # ST-LAT Engine — matriz de pruebas
 
-**Última actualización:** 2026-10-16  
+**Última actualización:** 2026-10-18  
 **Regla:** una capacidad se marca como implementada solo si existe código ejecutable y una prueba reproducible. Una especificación o un archivo de ejemplo, por sí solos, no prueban que el motor aplique esa regla en tiempo de ejecución.
 
 ## 1. Ejecutar las pruebas
@@ -59,6 +59,7 @@ La ejecución completa más reciente verificada antes de esta integración es [r
 | T-031 | Replay tras recarga reconstruye exactamente la versión persistida | `WorldStateStore` + `replay_events` + hashes canónicos | `replay_after_reload_matches_persisted_version` y `replayed_state_sha256` en informe de almacén | La integración CI cubre un evento de transformación; no simula un servicio multiusuario ni sincroniza Blender |
 | T-032 | Replay de varios eventos encadenados conserva versiones intermedias y rechaza una secuencia contradictoria sin mutar el snapshot de entrada | `WorldEventReplayTests`: transformación → reparentado → cambio de identidad; prueba negativa de timestamp regresivo | Suite `python3 -m unittest discover -s tests -v` en CI | Replay en memoria; todavía no sincroniza el estado con Blender ni aporta autorización criptográfica |
 | T-033 | Replay de varios eventos tras recargar snapshots conserva movimiento, jerarquía e identidad entre cuatro versiones | `scripts/validate_world_store.py` persiste v1–v4, recarga todas y compara replay canónico con la última versión | `multi_event_chain_replay_matches_persisted_latest` y checks de linaje/identidad en `stlat-world-state-store.json` | Secuencia de prueba acotada; el almacén sigue siendo local y de un solo escritor |
+| T-034 | Aplicar un snapshot validado a Blender no altera entidades no solicitadas y revierte una operación inválida | `scripts/world3d_sync_state.py` sobre la escena guardada: preflight de IDs/roles, aplicación de transform, lectura de vuelta de transform y AABB evaluada, rechazo de rol incorrecto y rollback de bounds incorrectos | `artifacts/stlat-world-state-blender-sync.json` | Solo mallas existentes sin padre; no crea/elimina/reparenta objetos, no sincroniza cámara/luces/animación y no guarda automáticamente |
 
 ## 3. Capacidades aún no verificadas / no implementadas
 
@@ -68,7 +69,7 @@ La ejecución completa más reciente verificada antes de esta integración es [r
 | F-002 | Repetir una petición y conservar IDs de identidad, malla y entidad entre versiones | Parcial: builds deterministas conservan IDs y transforms; no existe todavía registro persistente de assets/identidades entre cambios intencionales |
 | F-003 | Aplicar una orden explícita que contradice un default y demostrar que gana la orden, registrando el conflicto | Pendiente; contrato documentado, motor M15 no implementado |
 | F-004 | Prompt sin muebles/armas/vehículos: comprobar que no aparecen entidades implícitas | Pendiente; el perfil declara prohibiciones, no hay compilador de prompt integrado |
-| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay tras recarga ahora cubre una cadena de tres eventos y cuatro versiones persistidas, comparando estado canónico, jerarquía e identidad. Falta sincronización con Blender, base de datos multiusuario y registro de eventos duradero independiente |
+| F-005 | Restaurar snapshot y reproducir eventos hasta obtener estado equivalente | Parcial: replay tras recarga cubre tres eventos y cuatro versiones persistidas; un puente inicial aplica transforms validados a mallas Blender existentes. Falta restauración completa del mundo, base de datos multiusuario y registro de eventos duradero independiente |
 | F-006 | Misma identidad en varias cámaras/tiempos sin cambiar proporciones ni ID | Pendiente; el personaje actual es proxy |
 | F-007 | Colisiones con cápsulas o volúmenes continuos y prueba de movimiento rápido | Pendiente; el validador actual usa AABB muestreada |
 | F-008 | Detectar cambio no autorizado de ropa, apariencia, posición o número de sujetos en vídeo | Pendiente; no hay evaluador temporal conectado |

@@ -124,6 +124,18 @@ jobs:
         if: success()
         run: python3 scripts/validate_camera_isolation_report.py
 
+      - name: Test persistent world-state synchronization with Blender
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+          "$BLENDER_BIN" --background artifacts/stlat-world3d.blend --python scripts/world3d_sync_state.py -- --self-test 2>&1 | tee -a blender.log
+          test -s artifacts/stlat-world-state-blender-sync.json
+          cat artifacts/stlat-world-state-blender-sync.json
+
       - name: Self-test camera-isolation report validator
         run: python3 scripts/validate_camera_isolation_report.py --self-test
 
@@ -148,6 +160,7 @@ jobs:
           test -s artifacts/stlat-world3d-determinism.json
           test -s artifacts/stlat-world-state-replay.json
           test -s artifacts/stlat-world-state-store.json
+          test -s artifacts/stlat-world-state-blender-sync.json
           file artifacts/stlat-world3d-main.png artifacts/stlat-world3d-topdown.png
           cat artifacts/stlat-world3d-manifest.json
           cat artifacts/stlat-world3d-motion-validation.json
@@ -155,6 +168,7 @@ jobs:
           cat artifacts/stlat-world3d-determinism.json
           cat artifacts/stlat-world-state-replay.json
           cat artifacts/stlat-world-state-store.json
+          cat artifacts/stlat-world-state-blender-sync.json
 
       - name: Publish scene, renders and diagnostics
         if: always()
