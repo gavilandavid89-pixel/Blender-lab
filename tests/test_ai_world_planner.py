@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from ai_world_planner import validate_plan
+from ai_world_planner import request_plan, validate_plan
 
 
 def sample_snapshot():
@@ -35,6 +35,35 @@ def operation(target="char.001", position=None):
             "transform": {"position": position or [1.0, 0.0, 1.0],
                           "rotation_euler_rad": [0.0, 0.0, 0.0],
                           "scale": [1.0, 1.0, 1.0]}}
+
+
+class AIWorldPlannerRequestTests(unittest.TestCase):
+    def test_request_includes_explicit_user_agent(self):
+        import json
+        from unittest.mock import patch
+
+        response_body = {"choices": [{"message": {"content": json.dumps({
+            "summary": "Move character right.",
+            "operations": [operation(position=[1.0, 0.0, 1.0])],
+        })}}]}
+        class FakeResponse:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return json.dumps(response_body).encode("utf-8")
+
+        def fake_urlopen(request, timeout):
+            self.assertEqual("ST-LAT-World3D-Lab/1.0 (+https://github.com/gavilandavid89-pixel/Blender-lab)",
+                             request.get_header("User-agent"))
+            self.assertEqual("Bearer test-key", request.get_header("Authorization"))
+            self.assertEqual(45, timeout)
+            return FakeResponse()
+
+        with patch("ai_world_planner.urllib.request.urlopen", side_effect=fake_urlopen):
+            plan = request_plan("Move character right", sample_snapshot(), "test-key")
+        self.assertEqual("Move character right.", plan["summary"])
 
 
 class AIWorldPlannerValidationTests(unittest.TestCase):
