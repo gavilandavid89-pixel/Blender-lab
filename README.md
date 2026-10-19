@@ -35,7 +35,7 @@ Este repositorio valida primero los mecanismos del mundo 3D. **Todavía no es un
 | Contrato del estado del mundo | Valida entidades, transformaciones, versiones, jerarquías y transiciones | Prototipo Python con regresiones |
 | Replay de eventos | Reconstruye estado a partir de eventos aprobados y rechaza transiciones contradictorias | Implementado para los casos cubiertos por pruebas |
 | Almacén de snapshots | Persiste versiones locales, comprueba linaje/integridad y permite recargar versiones; prueba de regresión con varios personajes, un animal y un objeto a través de v1–v5 | Prototipo local de un solo escritor; la prueba multi-entidad valida persistencia JSON, no continuidad visual en vídeo |
-| Puente de sincronización con Blender | Aplica estado recuperado a una malla existente y verifica transformaciones, AABB, colisiones y rollback | Integración inicial; alcance limitado a mallas sin padre |
+| Puente de sincronización con Blender | Aplica snapshots a varias mallas existentes en una operación y verifica transforms, AABB, colisiones y rollback | Integración inicial; prueba torso+cabeza, aún limitada a mallas sin padre y sin creación/eliminación |
 | Compilador de prompt / adaptador de vídeo / evaluador temporal | Traduce instrucciones y compara vídeo candidato con el mundo | Diseño pendiente de implementación |
 
 Los estados de la tabla son deliberadamente conservadores: que exista un contrato de diseño no significa que ese módulo esté implementado. La matriz de pruebas identifica qué comportamiento se ha comprobado y qué límites conserva.
@@ -55,6 +55,8 @@ El laboratorio está construyendo y probando la siguiente cadena:
 9. Guardar informes JSON y el registro de ejecución como evidencia.
 
 La regresión multi-entidad crea un segundo personaje, un perro y una pelota mediante eventos aprobados, guarda versiones sucesivas y verifica que sus IDs, referencias de identidad y transforms siguen presentes al recargar el mundo. Esto valida persistencia estructurada entre estados; aún no prueba que un generador de vídeo mantenga esas identidades visualmente.
+
+La autoprueba de Blender también aplica un snapshot con dos entidades existentes (torso y cabeza), verifica que ambas se aplican y que las demás mallas permanecen intactas. Esto amplía la sincronización multi-entidad, pero no implementa todavía creación/eliminación de objetos ni identidad visual en vídeo.
 
 La integración actual **no** es una base de datos multiusuario ni un servicio de sincronización continuo. El puente de Blender no crea/elimina/reparenta entidades, no sincroniza rigs, cámaras, luces o animación, y no guarda automáticamente la escena modificada.
 
