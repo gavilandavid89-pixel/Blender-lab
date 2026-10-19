@@ -50,7 +50,7 @@ jobs:
           mkdir -p artifacts
           python3 scripts/ai_world_planner.py \
             --snapshot tests/fixtures/ai_planner_snapshot.json \
-            --prompt "Move char.001 slightly to the right. Keep prop.ball.001 and all identities unchanged." \
+            --prompt "Propose exactly one transform update for existing entity char.001: set its position to [0.3, 0.0, 1.0] meters. Keep rotation and scale unchanged. Do not modify prop.ball.001 or any identity." \
             --output artifacts/ai-world-plan.json
           python3 - <<'PY'
           import json
