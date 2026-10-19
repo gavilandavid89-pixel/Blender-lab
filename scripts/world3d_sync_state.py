@@ -241,10 +241,25 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
     if len(candidates) != 1:
         raise BlenderSyncError(f"expected exactly one character.torso mesh; found {len(candidates)}")
     obj = candidates[0]
+    companion_candidates = [
+        candidate for candidate in scene.objects
+        if candidate is not obj and candidate.type == "MESH"
+        and candidate.get("stlat_role") == "character.head"
+        and _id(candidate) is not None and candidate.parent is None
+    ]
+    if len(companion_candidates) != 1:
+        raise BlenderSyncError(
+            f"expected exactly one unparented character.head mesh with stlat_id; found {len(companion_candidates)}"
+        )
+    companion = companion_candidates[0]
     original = (list(obj.location), list(obj.rotation_euler), list(obj.scale))
+    companion_original = (list(companion.location), list(companion.rotation_euler), list(companion.scale))
     original_entity = _entity(obj, bpy)
+    companion_entity = _entity(companion, bpy)
     initial_state = _snapshot(original_entity)
+    initial_state["entities"].append(companion_entity)
     original_bounds = _aabb(obj, bpy)
+    companion_bounds = _aabb(companion, bpy)
     moved_pos = [float(obj.location[0]) + 0.25, float(obj.location[1]), float(obj.location[2])]
     moved = _entity(obj, bpy, position=moved_pos, shift_x=0.25)
     other_before = _other_object_transforms(scene, obj)
@@ -280,6 +295,12 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
                 applied["status"] == "success"
                 and _near(obj.location, moved_pos)
                 and _bounds_match(_aabb(obj, bpy), moved["bounds"])
+            )
+            checks["multi_entity_snapshot_applied"] = (
+                applied["applied_count"] == 2
+                and set(applied["applied_entity_ids"]) == {_id(obj), _id(companion)}
+                and _near(companion.location, companion_entity["transform"]["position"])
+                and _bounds_match(_aabb(companion, bpy), companion_entity["bounds"])
             )
         checks["non_target_objects_unchanged"] = _other_object_transforms(scene, obj) == other_before
         checks["valid_transform_applied_and_bounds_verified"] = (
@@ -326,13 +347,17 @@ def run_self_test(scene: Any, bpy: Any) -> dict[str, Any]:
         checks["original_scene_transform_restored"] = (
             _near(obj.location, original[0]) and _near(obj.rotation_euler, original[1])
             and _near(obj.scale, original[2]) and _bounds_match(_aabb(obj, bpy), original_bounds)
+            and _near(companion.location, companion_original[0])
+            and _near(companion.rotation_euler, companion_original[1])
+            and _near(companion.scale, companion_original[2])
+            and _bounds_match(_aabb(companion, bpy), companion_bounds)
         )
     finally:
         obj.location, obj.rotation_euler, obj.scale = original
         bpy.context.view_layer.update()
     return {"schema": "stlat.world-state-blender-sync-report.v1",
             "status": "passed" if all(checks.values()) else "failed",
-            "method": "saved-scene end-to-end test: approved event replay, persist/reload/apply, non-target isolation, role/AABB rejection, solid-overlap rejection and rollback",
+            "method": "saved-scene end-to-end test: multi-entity approved event replay, persist/reload/apply, non-target isolation, role/AABB rejection, solid-overlap rejection and rollback",
             "scene_file": "artifacts/stlat-world3d.blend", "target_id": _id(obj),
             "checks": checks, "check_count": len(checks),
             "limitations": ["Existing unparented MESH objects only; stable ID and semantic role must match.",
