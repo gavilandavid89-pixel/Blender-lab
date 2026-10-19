@@ -1,0 +1,48 @@
+{
+  "schema": "stlat.world-state.v1",
+  "world_id": "world.ai-planner-smoke-test",
+  "version": 1,
+  "parent_version": null,
+  "timestamp": 1.0,
+  "units": "meters",
+  "axes": {
+    "x": "right",
+    "y": "depth_positive_toward_back_wall",
+    "z": "up"
+  },
+  "bounds": {
+    "min": [-4.0, -4.0, 0.0],
+    "max": [4.0, 4.0, 3.2]
+  },
+  "entities": [
+    {
+      "id": "char.001",
+      "role": "character.torso",
+      "transform": {
+        "position": [0.0, 0.0, 1.0],
+        "rotation_euler_rad": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "bounds": {"min": [-0.25, -0.2, 0.5], "max": [0.25, 0.2, 1.5], "kind": "aabb"},
+      "persistence": "dynamic",
+      "collision": "solid",
+      "identity_ref": "identity.character.001",
+      "attributes": {"identity_signature": "stlat-smoke-test-v1"}
+    },
+    {
+      "id": "prop.ball.001",
+      "role": "prop.ball",
+      "transform": {
+        "position": [1.5, 0.0, 0.2],
+        "rotation_euler_rad": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "bounds": {"min": [1.4, -0.1, 0.1], "max": [1.6, 0.1, 0.3], "kind": "aabb"},
+      "persistence": "dynamic",
+      "collision": "solid",
+      "identity_ref": "identity.ball.001",
+      "attributes": {"identity_signature": "stlat-ball-v1"}
+    }
+  ],
+  "events": []
+}
