@@ -37,6 +37,7 @@ jobs:
         run: python3 -m unittest discover -s tests -v
 
       - name: Optional live AI planner smoke test (Groq)
+        continue-on-error: true
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         shell: bash
