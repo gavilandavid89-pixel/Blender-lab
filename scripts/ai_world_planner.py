@@ -137,7 +137,12 @@ def request_plan(prompt: str, snapshot: dict[str, Any], api_key: str, model: str
     request = urllib.request.Request(
         endpoint,
         data=json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            # Explicit UA avoids the default Python-urllib signature that can trigger Cloudflare 1010.
+            "User-Agent": "ST-LAT-World3D-Lab/1.0 (+https://github.com/gavilandavid89-pixel/Blender-lab)",
+        },
         method="POST",
     )
     try:
