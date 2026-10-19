@@ -36,6 +36,32 @@ jobs:
       - name: Run ST-LAT contract regression tests
         run: python3 -m unittest discover -s tests -v
 
+      - name: Optional live AI planner smoke test (Groq)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${GROQ_API_KEY:-}" ]; then
+            echo "STLAT_AI_PLANNER=SKIP: configure repository Actions secret GROQ_API_KEY to enable the live provider test."
+            exit 0
+          fi
+          mkdir -p artifacts
+          python3 scripts/ai_world_planner.py \
+            --snapshot tests/fixtures/ai_planner_snapshot.json \
+            --prompt "Move char.001 slightly to the right. Keep prop.ball.001 and all identities unchanged." \
+            --output artifacts/ai-world-plan.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("artifacts/ai-world-plan.json").read_text(encoding="utf-8"))
+          plan = result.get("plan", {})
+          ops = plan.get("operations", [])
+          if result.get("status") != "proposed" or not any(op.get("target_id") == "char.001" for op in ops):
+              raise SystemExit("AI planner smoke test did not propose a transform for char.001")
+          print("STLAT_AI_PLANNER_SMOKE_TEST=PASS")
+          PY
+
       - name: Self-test motion report validator
         run: python3 scripts/validate_motion_report.py --self-test
 
