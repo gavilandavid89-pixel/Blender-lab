@@ -101,7 +101,7 @@ El adaptador inicial `scripts/ai_world_planner.py` usa la API compatible con Ope
 La validación local no necesita API ni paquetes externos:
 
 ```bash
-python3 -m unittest tests.test_ai_world_planner -v
+python3 -m unittest discover -s tests -p 'test_ai_world_planner.py' -v
 ```
 
 Para una prueba real, crea una API key desde la consola de Groq y guárdala como variable de entorno `GROQ_API_KEY`; nunca la pegues en el código ni la subas al repositorio. En GitHub, añádela como **Settings → Secrets and variables → Actions → New repository secret**, con nombre exacto `GROQ_API_KEY`. Después ejecuta **Actions → Blender Headless Lab → Run workflow**. Si el secreto no está configurado, el paso de IA se omite sin impedir las pruebas de Blender. Si está configurado, el workflow realiza una petición real y guarda `artifacts/ai-world-plan.json`.
