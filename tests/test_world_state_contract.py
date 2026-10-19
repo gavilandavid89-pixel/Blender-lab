@@ -441,6 +441,16 @@ class WorldStateStoreTests(unittest.TestCase):
                    position=[3.0, 0.0, 0.0],
                    attributes={"asset_id": "ball-v1", "appearance_id": "ball-red-v1"}),
         ]
+        # Keep the stored spatial bounds consistent with each entity's own position.
+        for new_entity in new_entities:
+            x, y, z = new_entity["transform"]["position"]
+            half_width = 0.25 if new_entity["role"] == "prop.ball" else 0.5
+            height = 0.5 if new_entity["role"] == "prop.ball" else 2.0
+            new_entity["bounds"] = {
+                "min": [x - half_width, y - half_width, z],
+                "max": [x + half_width, y + half_width, z + height],
+                "kind": "aabb",
+            }
 
         for index, new_entity in enumerate(new_entities, start=2):
             event = {
