@@ -488,8 +488,11 @@ class WorldStateStoreTests(unittest.TestCase):
         self.assertEqual("sig-mira-v1", by_id["char.002"]["attributes"]["identity_signature"])
         self.assertEqual("sig-dog-001", by_id["animal.dog.001"]["attributes"]["identity_signature"])
         self.assertEqual([0.25, 0.0, 0.0], by_id["char.001"]["transform"]["position"])
-        self.assertEqual([0.0, 0.0, 0.0], by_id["animal.dog.001"]["transform"]["position"])
-        self.assertEqual([0.0, 0.0, 0.0], by_id["prop.ball.001"]["transform"]["position"])
+        self.assertEqual([2.0, 0.0, 0.0], by_id["animal.dog.001"]["transform"]["position"])
+        self.assertEqual([3.0, 0.0, 0.0], by_id["prop.ball.001"]["transform"]["position"])
+        # The persisted entities must retain their independent positions and assets.
+        self.assertEqual("dog-v1", by_id["animal.dog.001"]["attributes"]["asset_id"])
+        self.assertEqual("ball-v1", by_id["prop.ball.001"]["attributes"]["asset_id"])
 
     def test_snapshot_store_versions_are_immutable(self):
         store = self.Store(self.root)
