@@ -422,6 +422,75 @@ class WorldStateStoreTests(unittest.TestCase):
         self.assertEqual(canonical_state_json(store.load_latest("world-alpha")),
                          canonical_state_json(replayed))
 
+    def test_multiple_characters_animals_and_props_persist_across_versions(self):
+        """A sequence of videos must share one world with stable entity IDs."""
+        store = self.Store(self.root)
+        state = self.initial
+        store.save_snapshot(state)
+
+        new_entities = [
+            entity("char.002", "character", identity_ref="identity.mira",
+                   position=[1.0, 0.0, 0.0],
+                   attributes={"identity_signature": "sig-mira-v1", "asset_id": "human-v1",
+                               "appearance_id": "mira-blue-v1"}),
+            entity("animal.dog.001", "animal.dog", identity_ref="identity.dog-001",
+                   position=[2.0, 0.0, 0.0],
+                   attributes={"identity_signature": "sig-dog-001", "asset_id": "dog-v1",
+                               "appearance_id": "dog-brown-v1"}),
+            entity("prop.ball.001", "prop.ball", identity_ref="identity.ball-001",
+                   position=[3.0, 0.0, 0.0],
+                   attributes={"asset_id": "ball-v1", "appearance_id": "ball-red-v1"}),
+        ]
+
+        for index, new_entity in enumerate(new_entities, start=2):
+            event = {
+                "id": f"evt-create-{new_entity['id']}",
+                "type": "entity_created",
+                "timestamp": float(index),
+                "actor_id": "test-user",
+                "target_id": new_entity["id"],
+                "approved": True,
+                "payload": {"entity": copy.deepcopy(new_entity)},
+            }
+            state = self.replay_events(state, [event])
+            store.save_snapshot(state)
+
+        # Simulate a later video: move one character while retaining all other entities.
+        moved_character = copy.deepcopy(state["entities"])
+        char = next(item for item in moved_character if item["id"] == "char.001")
+        char["transform"]["position"] = [0.25, 0.0, 0.0]
+        char["bounds"] = {"min": [-0.25, -0.5, 0.0], "max": [0.75, 0.5, 2.0], "kind": "aabb"}
+        move = {
+            "id": "evt-video-5-move-char-001",
+            "type": "transform_updated",
+            "timestamp": 5.0,
+            "actor_id": "test-user",
+            "target_id": "char.001",
+            "approved": True,
+            "payload": {
+                "transform": copy.deepcopy(char["transform"]),
+                "bounds": copy.deepcopy(char["bounds"]),
+            },
+        }
+        state = self.replay_events(state, [move])
+        store.save_snapshot(state)
+
+        restored = store.load_latest("world-alpha")
+        by_id = {item["id"]: item for item in restored["entities"]}
+        self.assertEqual(5, restored["version"])
+        self.assertEqual(
+            {"room.floor", "char.001", "camera.main", "char.002", "animal.dog.001", "prop.ball.001"},
+            set(by_id),
+        )
+        self.assertEqual("identity.mira", by_id["char.002"]["identity_ref"])
+        self.assertEqual("identity.dog-001", by_id["animal.dog.001"]["identity_ref"])
+        self.assertEqual("identity.ball-001", by_id["prop.ball.001"]["identity_ref"])
+        self.assertEqual("sig-mira-v1", by_id["char.002"]["attributes"]["identity_signature"])
+        self.assertEqual("sig-dog-001", by_id["animal.dog.001"]["attributes"]["identity_signature"])
+        self.assertEqual([0.25, 0.0, 0.0], by_id["char.001"]["transform"]["position"])
+        self.assertEqual([0.0, 0.0, 0.0], by_id["animal.dog.001"]["transform"]["position"])
+        self.assertEqual([0.0, 0.0, 0.0], by_id["prop.ball.001"]["transform"]["position"])
+
     def test_snapshot_store_versions_are_immutable(self):
         store = self.Store(self.root)
         store.save_snapshot(self.initial)
