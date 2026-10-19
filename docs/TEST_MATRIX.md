@@ -90,3 +90,5 @@ La ejecución completa más reciente verificada antes de esta integración es [r
 - **No implementado**: hay un contrato o una idea, pero no hay código funcional y pruebas que la ejecuten.
 
 Un resultado verde del laboratorio **no demuestra** que un generador de vídeo vaya a obedecer las referencias. Solo demuestra los contratos y pruebas enumerados en esta matriz.
+
+| T-038 | Varios personajes, animales y objetos conservan IDs, referencias de identidad y transforms entre versiones persistidas de un mismo mundo | `WorldStateStoreTests.test_multiple_characters_animals_and_props_persist_across_versions`: crea entidades mediante eventos aprobados, persiste v1–v5, recarga la última versión y comprueba que todas siguen presentes | Suite `python3 -m unittest discover -s tests -v` | Prueba de contrato/persistencia JSON; no demuestra todavía identidad visual en vídeo ni creación/sincronización multi-entidad dentro de Blender |
