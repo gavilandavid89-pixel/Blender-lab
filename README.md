@@ -34,7 +34,7 @@ Este repositorio valida primero los mecanismos del mundo 3D. **Todavía no es un
 | Aislamiento de cámara | Cambia cámara/lente en la escena guardada y comprueba que las entidades no cámara no cambien | Script y paso CI dedicados |
 | Contrato del estado del mundo | Valida entidades, transformaciones, versiones, jerarquías y transiciones | Prototipo Python con regresiones |
 | Replay de eventos | Reconstruye estado a partir de eventos aprobados y rechaza transiciones contradictorias | Implementado para los casos cubiertos por pruebas |
-| Almacén de snapshots | Persiste versiones locales, comprueba linaje/integridad y permite recargar versiones | Prototipo local de un solo escritor |
+| Almacén de snapshots | Persiste versiones locales, comprueba linaje/integridad y permite recargar versiones; prueba de regresión con varios personajes, un animal y un objeto a través de v1–v5 | Prototipo local de un solo escritor; la prueba multi-entidad valida persistencia JSON, no continuidad visual en vídeo |
 | Puente de sincronización con Blender | Aplica estado recuperado a una malla existente y verifica transformaciones, AABB, colisiones y rollback | Integración inicial; alcance limitado a mallas sin padre |
 | Compilador de prompt / adaptador de vídeo / evaluador temporal | Traduce instrucciones y compara vídeo candidato con el mundo | Diseño pendiente de implementación |
 
@@ -53,6 +53,8 @@ El laboratorio está construyendo y probando la siguiente cadena:
 7. Verificar la transformación y su AABB evaluada, preservar objetos no objetivo y rechazar operaciones inválidas.
 8. Rechazar movimientos cuya trayectoria muestreada cruce un obstáculo, incluso si la pose final está libre.
 9. Guardar informes JSON y el registro de ejecución como evidencia.
+
+La regresión multi-entidad crea un segundo personaje, un perro y una pelota mediante eventos aprobados, guarda versiones sucesivas y verifica que sus IDs, referencias de identidad y transforms siguen presentes al recargar el mundo. Esto valida persistencia estructurada entre estados; aún no prueba que un generador de vídeo mantenga esas identidades visualmente.
 
 La integración actual **no** es una base de datos multiusuario ni un servicio de sincronización continuo. El puente de Blender no crea/elimina/reparenta entidades, no sincroniza rigs, cámaras, luces o animación, y no guarda automáticamente la escena modificada.
 
