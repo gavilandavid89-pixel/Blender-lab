@@ -558,5 +558,98 @@ class WorldStateStoreTests(unittest.TestCase):
 
 
 
+
+class WorldTransactionTests(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        from world_state_store import WorldStateStore
+        from world_state_transaction import WorldTransactionError, commit_approved_transform
+        self.temp = tempfile.TemporaryDirectory(prefix="stlat-transaction-tests-")
+        self.addCleanup(self.temp.cleanup)
+        self.store = WorldStateStore(self.temp.name)
+        self.commit = commit_approved_transform
+        self.TransactionError = WorldTransactionError
+        self.initial = snapshot()
+        self.store.save_snapshot(self.initial)
+        self.plan = {
+            "summary": "Move char.001 right by one meter.",
+            "operations": [{
+                "type": "transform_updated",
+                "target_id": "char.001",
+                "reason": "explicit test request",
+                "transform": {
+                    "position": [1.0, 0.0, 0.0],
+                    "rotation_euler_rad": [0.0, 0.0, 0.0],
+                    "scale": [1.0, 1.0, 1.0],
+                },
+            }],
+        }
+        self.bounds = {"min": [0.5, -0.5, 0.0], "max": [1.5, 0.5, 2.0], "kind": "aabb"}
+
+    def commit_args(self, **overrides):
+        args = {
+            "store_root": self.temp.name,
+            "expected_world_id": "world-alpha",
+            "expected_version": 1,
+            "plan": copy.deepcopy(self.plan),
+            "target_bounds": copy.deepcopy(self.bounds),
+            "event_id": "evt-approved-move-001",
+            "approved_by": "test-user",
+            "timestamp": 2.0,
+        }
+        args.update(overrides)
+        return args
+
+    def test_explicitly_approved_plan_commits_next_immutable_version(self):
+        report = self.commit(**self.commit_args())
+        self.assertEqual("committed", report["status"])
+        self.assertTrue(all(report["checks"].values()))
+        persisted = self.store.load_latest("world-alpha")
+        self.assertEqual(2, persisted["version"])
+        self.assertEqual(1, persisted["parent_version"])
+        target = next(e for e in persisted["entities"] if e["id"] == "char.001")
+        self.assertEqual([1.0, 0.0, 0.0], target["transform"]["position"])
+        self.assertEqual("test-user", persisted["events"][-1]["approved_by"])
+
+    def test_missing_trusted_approval_is_rejected_without_commit(self):
+        with self.assertRaisesRegex(self.TransactionError, "trusted approval"):
+            self.commit(**self.commit_args(approved_by=" "))
+        self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
+
+    def test_stale_expected_version_is_rejected(self):
+        self.commit(**self.commit_args())
+        with self.assertRaisesRegex(self.TransactionError, "stale proposal"):
+            self.commit(**self.commit_args(event_id="evt-stale", expected_version=1))
+        self.assertEqual(2, self.store.load_latest("world-alpha")["version"])
+
+    def test_rotation_change_is_rejected_without_commit(self):
+        args = self.commit_args()
+        args["plan"]["operations"][0]["transform"]["rotation_euler_rad"] = [0.0, 0.0, 1.0]
+        with self.assertRaisesRegex(self.TransactionError, "forbids rotation"):
+            self.commit(**args)
+        self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
+
+    def test_invalid_evaluated_bounds_are_rejected_without_commit(self):
+        bounds = copy.deepcopy(self.bounds)
+        bounds["min"][0] = 3.0
+        bounds["max"][0] = 2.0
+        with self.assertRaisesRegex(self.TransactionError, "candidate state rejected"):
+            self.commit(**self.commit_args(target_bounds=bounds))
+        self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
+
+    def test_unknown_target_is_rejected_without_commit(self):
+        args = self.commit_args()
+        args["plan"]["operations"][0]["target_id"] = "not-in-world"
+        with self.assertRaisesRegex(self.TransactionError, "existing entity"):
+            self.commit(**args)
+        self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
+
+    def test_event_id_reuse_is_rejected_without_commit(self):
+        self.commit(**self.commit_args())
+        with self.assertRaisesRegex(self.TransactionError, "stale proposal"):
+            self.commit(**self.commit_args(expected_version=1))
+        self.assertEqual(2, self.store.load_latest("world-alpha")["version"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
