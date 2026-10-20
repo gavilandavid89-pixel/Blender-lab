@@ -88,6 +88,9 @@ def commit_approved_transform(
 
     if not isinstance(target_bounds, dict) or target_bounds.get("kind") != "aabb":
         raise WorldTransactionError("target_bounds must be an evaluated AABB with kind='aabb'")
+    if transform == entity["transform"] and target_bounds == entity["bounds"]:
+        raise WorldTransactionError("no-op transform rejected")
+
     candidate = copy.deepcopy(latest)
     target = next(item for item in candidate["entities"] if item["id"] == target_id)
     target["transform"] = copy.deepcopy(transform)
