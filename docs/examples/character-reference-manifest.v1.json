@@ -30,7 +30,27 @@
       "character",
       "visible background"
     ],
-    "composition_notes": null
+    "composition_notes": null,
+    "framing": {
+      "primary_framing": "full_body",
+      "character_fully_visible": true,
+      "cropped_regions": [],
+      "composition_is_intentional": true,
+      "camera_view": "front",
+      "perspective": "unknown"
+    },
+    "pose": {
+      "pose_kind": "standing",
+      "is_reference_pose_not_required_rest_pose": true,
+      "pose_confidence": "observed",
+      "notes": "Example only; a real import may use any pose or camera angle."
+    },
+    "visibility_policy": {
+      "cropped_body_parts_are_not_missing_asset_errors": true,
+      "hidden_geometry_policy": "unknown_or_inferred_until_additional_evidence",
+      "do_not_force_front_or_t_pose": true,
+      "allow_multiple_pose_references": true
+    }
   },
   "identity_policy": {
     "authority": "source_reference_and_explicit_user_edits",
