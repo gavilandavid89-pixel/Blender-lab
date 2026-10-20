@@ -89,6 +89,9 @@ jobs:
       - name: Self-test persistent world snapshot store
         run: python3 scripts/validate_world_store.py
 
+      - name: Self-test character reference manifest validator
+        run: python3 scripts/validate_character_reference_manifest.py
+
       - name: Self-test deterministic manifest validator
         run: python3 scripts/validate_deterministic_manifest.py --self-test
 
