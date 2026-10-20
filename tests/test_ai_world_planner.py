@@ -116,5 +116,37 @@ class AIWorldPlannerValidationTests(unittest.TestCase):
         self.assertTrue(any("summary" in e for e in validate_plan(plan, self.snapshot)))
 
 
+    def test_unsupported_relationship_field_is_rejected(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["parent_id"] = "char.002"
+        self.assertTrue(any("protected identity or relationship" in e for e in validate_plan(plan, self.snapshot)))
+
+    def test_unrecognized_operation_field_is_rejected(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["teleport"] = True
+        self.assertTrue(any("unsupported fields" in e for e in validate_plan(plan, self.snapshot)))
+
+    def test_unrecognized_transform_field_is_rejected(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["transform"]["identity_ref"] = "identity.other"
+        self.assertTrue(any("unsupported fields" in e for e in validate_plan(plan, self.snapshot)))
+
+    def test_empty_reason_is_rejected(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["reason"] = " "
+        self.assertTrue(any(".reason must be a non-empty string" in e for e in validate_plan(plan, self.snapshot)))
+
+    def test_duplicate_snapshot_entity_ids_are_rejected(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        snapshot["entities"].append(copy.deepcopy(snapshot["entities"][0]))
+        self.assertTrue(any("duplicate id char.001" in e for e in validate_plan(self.plan, snapshot)))
+
+    def test_inverted_world_bounds_are_rejected(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        snapshot["bounds"]["min"][0] = 5.0
+        snapshot["bounds"]["max"][0] = 4.0
+        self.assertTrue(any("min must not exceed max" in e for e in validate_plan(self.plan, snapshot)))
+
+
 if __name__ == "__main__":
     unittest.main()
