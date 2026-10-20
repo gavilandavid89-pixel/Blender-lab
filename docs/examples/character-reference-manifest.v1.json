@@ -1,0 +1,80 @@
+{
+  "schema": "stlat.character-reference-manifest.v1",
+  "character_id": "character.reference.001",
+  "version": 1,
+  "source": {
+    "kind": "image",
+    "uri": null,
+    "sha256": null,
+    "immutable": true,
+    "notes": "Example template; attach the original image reference and hash when available."
+  },
+  "reference_scope": {
+    "mode": "character_and_environment",
+    "images": [
+      {
+        "image_id": "reference.image.001",
+        "view": "full_frame",
+        "sha256": null,
+        "role": "both",
+        "visible_regions": [
+          "character",
+          "background",
+          "lighting",
+          "composition"
+        ]
+      }
+    ],
+    "environment_policy": "reconstruct_visible_environment",
+    "visible_elements": [
+      "character",
+      "visible background"
+    ],
+    "composition_notes": null
+  },
+  "identity_policy": {
+    "authority": "source_reference_and_explicit_user_edits",
+    "style_may_change": [
+      "shading",
+      "outlines",
+      "lighting",
+      "color_management",
+      "render_treatment"
+    ],
+    "style_must_not_change": [
+      "face",
+      "eyes",
+      "hair",
+      "silhouette",
+      "body_proportions",
+      "clothing",
+      "accessories",
+      "markings",
+      "source_environment",
+      "composition"
+    ],
+    "unknown_geometry_policy": "label_as_inferred_or_unknown"
+  },
+  "model_asset": {
+    "status": "not_imported",
+    "asset_uri": null,
+    "sha256": null,
+    "source_preserved": true,
+    "identity_match": "not_compared",
+    "geometry_fingerprint": null,
+    "measured_dimensions_m": null,
+    "rig_status": "unknown"
+  },
+  "editing": {
+    "allow_deliberate_deformation": true,
+    "automatic_identity_repair": false,
+    "history": []
+  },
+  "validation": {
+    "status": "not_run",
+    "warnings": [
+      "Template example; not an imported or validated asset."
+    ],
+    "checks": {}
+  }
+}
