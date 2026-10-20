@@ -85,6 +85,16 @@ class AIWorldPlannerValidationTests(unittest.TestCase):
         plan["operations"][0]["transform"]["position"] = [9.0, 0.0, 1.0]
         self.assertTrue(any("hard world bounds" in e for e in validate_plan(plan, self.snapshot)))
 
+    def test_rotation_change_is_rejected_by_planner_v1(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["transform"]["rotation_euler_rad"] = [0.0, 0.0, 0.5]
+        self.assertTrue(any("rotation_euler_rad changes are not authorized" in e for e in validate_plan(plan, self.snapshot)))
+
+    def test_positive_scale_change_is_rejected_by_planner_v1(self):
+        plan = copy.deepcopy(self.plan)
+        plan["operations"][0]["transform"]["scale"] = [1.1, 1.0, 1.0]
+        self.assertTrue(any("scale changes are not authorized" in e for e in validate_plan(plan, self.snapshot)))
+
     def test_non_positive_scale_is_rejected(self):
         plan = copy.deepcopy(self.plan)
         plan["operations"][0]["transform"]["scale"] = [1.0, 0.0, 1.0]
