@@ -16,6 +16,7 @@ Laboratorio de ingeniería para validar el **mundo 3D controlado de ST-LAT Engin
 - [Estado real y límites conocidos](#estado-real-y-límites-conocidos)
 - [Próximos hitos](#próximos-hitos)
 - [Documentación técnica](#documentación-técnica)
+- [Contrato de importación y editor de personajes](docs/CHARACTER_INTAKE_AND_EDITOR_CONTRACT.md)
 
 ## Objetivo y alcance
 
@@ -36,6 +37,8 @@ Este repositorio valida primero los mecanismos del mundo 3D. **Todavía no es un
 | Replay de eventos | Reconstruye estado a partir de eventos aprobados y rechaza transiciones contradictorias | Implementado para los casos cubiertos por pruebas |
 | Almacén de snapshots | Persiste versiones locales, comprueba linaje/integridad y permite recargar versiones; prueba de regresión con varios personajes, un animal y un objeto a través de v1–v5 | Prototipo local de un solo escritor; la prueba multi-entidad valida persistencia JSON, no continuidad visual en vídeo |
 | Puente de sincronización con Blender | Aplica snapshots a varias mallas existentes en una operación y verifica transforms, AABB, colisiones y rollback | Integración inicial; prueba torso+cabeza, aún limitada a mallas sin padre y sin creación/eliminación |
+| Validador de recursos de personaje y manifiesto de identidad | Inspecciona malla, escala, proporciones, materiales, rig y referencias; protege rasgos visuales | Contrato especificado; implementación pendiente |
+| Editor 3D y perfiles visuales | Permite inspeccionar y ajustar dimensiones, origen, ejes, proporciones y estilo sin mutaciones silenciosas | Contrato de interfaz especificado; UI pendiente |
 | Compilador de prompt / adaptador de vídeo / evaluador temporal | Traduce instrucciones y compara vídeo candidato con el mundo | Diseño pendiente de implementación |
 
 Los estados de la tabla son deliberadamente conservadores: que exista un contrato de diseño no significa que ese módulo esté implementado. La matriz de pruebas identifica qué comportamiento se ha comprobado y qué límites conserva.
@@ -86,7 +89,7 @@ Los artefactos pertenecen a una ejecución concreta. Para saber qué commit prob
 - Las entidades físicas deben respetar los límites duros del mundo; las cámaras pueden situarse fuera de ellos.
 - Cada entidad usa un ID estable y un rol semántico. Los `parent_id` deben apuntar a entidades existentes y no pueden formar ciclos.
 - Cambiar la relación padre-hijo requiere una transición aprobada.
-- El personaje actual es un **proxy geométrico segmentado**, no un rig final ni una identidad visual persistente.
+- El personaje actual es un **proxy geométrico segmentado**, no un rig final ni una identidad visual persistente. El contrato de admisión define como prioridad los rasgos de las referencias del usuario; los perfiles artísticos solo pueden cambiar la presentación, no rediseñar silenciosamente al personaje.
 
 ### Movimiento y colisiones
 
@@ -201,3 +204,8 @@ Cada hito debe terminar con código, pruebas, documentación y evidencia reprodu
 ---
 
 **Regla de ingeniería:** no marcar una capacidad como implementada solo porque esté documentada o porque exista un archivo con ese nombre. El estado se determina por el código ejecutable, las pruebas pertinentes y la evidencia de una ejecución reproducible.
+
+
+## Importación de personajes y editor 3D
+
+El siguiente contrato de diseño está en [docs/CHARACTER_INTAKE_AND_EDITOR_CONTRACT.md](docs/CHARACTER_INTAKE_AND_EDITOR_CONTRACT.md). Define precedencia de imagen de referencia, medición de geometría evaluada, unidades y proporciones, preparación del rig, manifiesto de identidad, perfiles de estilo y controles de editor para escritorio y móvil. **Especificación solamente:** el validador de importación y la interfaz visual aún no están implementados. Una imagen 2D no permite deducir con certeza toda la geometría 3D; las propiedades no observables deben marcarse como inferidas o desconocidas y dejarse editables por el usuario.
