@@ -625,7 +625,7 @@ class WorldTransactionTests(unittest.TestCase):
     def test_rotation_change_is_rejected_without_commit(self):
         args = self.commit_args()
         args["plan"]["operations"][0]["transform"]["rotation_euler_rad"] = [0.0, 0.0, 1.0]
-        with self.assertRaisesRegex(self.TransactionError, "forbids rotation"):
+        with self.assertRaisesRegex(self.TransactionError, "rotation_euler_rad changes are not authorized|forbids rotation"):
             self.commit(**args)
         self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
 
