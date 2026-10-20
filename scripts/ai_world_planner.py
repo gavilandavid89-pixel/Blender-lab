@@ -47,10 +47,21 @@ def validate_plan(plan: Any, snapshot: Any) -> list[str]:
     entities = snapshot.get("entities")
     if not isinstance(entities, list):
         return errors + ["snapshot.entities must be an array"]
-    by_id = {e.get("id"): e for e in entities if isinstance(e, dict) and isinstance(e.get("id"), str)}
+    by_id: dict[str, dict[str, Any]] = {}
+    for index, entity in enumerate(entities):
+        if not isinstance(entity, dict) or not isinstance(entity.get("id"), str) or not entity["id"].strip():
+            errors.append(f"snapshot.entities[{index}].id must be a non-empty string")
+            continue
+        entity_id = entity["id"]
+        if entity_id in by_id:
+            errors.append(f"snapshot.entities contains duplicate id {entity_id}")
+        by_id[entity_id] = entity
     bounds = snapshot.get("bounds")
     if not isinstance(bounds, dict) or not _finite_vector3(bounds.get("min")) or not _finite_vector3(bounds.get("max")):
         return errors + ["snapshot.bounds must contain finite min/max vector3 values"]
+
+    if any(bounds["min"][axis] > bounds["max"][axis] for axis in range(3)):
+        return errors + ["snapshot.bounds min must not exceed max"]
 
     seen: set[str] = set()
     for i, op in enumerate(operations):
@@ -58,8 +69,17 @@ def validate_plan(plan: Any, snapshot: Any) -> list[str]:
         if not isinstance(op, dict):
             errors.append(f"{prefix} must be an object")
             continue
+        protected = {"identity_ref", "identity_signature", "asset_id", "appearance_id", "role", "parent_id"}
+        if protected.intersection(op):
+            errors.append(f"{prefix} cannot modify protected identity or relationship fields")
+        allowed_operation_keys = {"type", "target_id", "reason", "transform"}
+        unexpected_operation_keys = set(op) - allowed_operation_keys
+        if unexpected_operation_keys:
+            errors.append(f"{prefix} contains unsupported fields: {sorted(unexpected_operation_keys)}")
         if op.get("type") != "transform_updated":
             errors.append(f"{prefix}.type must be transform_updated; this adapter cannot create/delete entities")
+        if not isinstance(op.get("reason"), str) or not op["reason"].strip():
+            errors.append(f"{prefix}.reason must be a non-empty string")
         target = op.get("target_id")
         if not isinstance(target, str) or target not in by_id:
             errors.append(f"{prefix}.target_id must identify an existing entity")
@@ -71,6 +91,13 @@ def validate_plan(plan: Any, snapshot: Any) -> list[str]:
         if not isinstance(transform, dict):
             errors.append(f"{prefix}.transform must be an object")
             continue
+        required_transform_keys = {"position", "rotation_euler_rad", "scale"}
+        missing_transform_keys = required_transform_keys - set(transform)
+        extra_transform_keys = set(transform) - required_transform_keys
+        if missing_transform_keys:
+            errors.append(f"{prefix}.transform missing required fields: {sorted(missing_transform_keys)}")
+        if extra_transform_keys:
+            errors.append(f"{prefix}.transform contains unsupported fields: {sorted(extra_transform_keys)}")
         for key in ("position", "rotation_euler_rad", "scale"):
             if not _finite_vector3(transform.get(key)):
                 errors.append(f"{prefix}.transform.{key} must be a finite vector3")
