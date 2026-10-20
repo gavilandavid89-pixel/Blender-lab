@@ -1,0 +1,387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://st-lat.invalid/schemas/character-reference-manifest.v1.schema.json",
+  "title": "ST-LAT Character Reference Manifest v1",
+  "description": "Contract for preserving source-image authority, environment capture mode, model provenance and explicit user edits.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "character_id",
+    "version",
+    "source",
+    "reference_scope",
+    "identity_policy",
+    "model_asset",
+    "editing",
+    "validation"
+  ],
+  "properties": {
+    "schema": {
+      "const": "stlat.character-reference-manifest.v1"
+    },
+    "character_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "reference_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "images",
+        "environment_policy"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "character_only",
+            "character_and_environment"
+          ]
+        },
+        "images": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/referenceImage"
+          }
+        },
+        "environment_policy": {
+          "enum": [
+            "reconstruct_visible_environment",
+            "no_environment_in_source",
+            "needs_user_review"
+          ]
+        },
+        "visible_elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "composition_notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "identity_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority",
+        "style_may_change",
+        "style_must_not_change",
+        "unknown_geometry_policy"
+      ],
+      "properties": {
+        "authority": {
+          "const": "source_reference_and_explicit_user_edits"
+        },
+        "style_may_change": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "shading",
+              "outlines",
+              "lighting",
+              "color_management",
+              "render_treatment"
+            ]
+          }
+        },
+        "style_must_not_change": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "face",
+              "eyes",
+              "hair",
+              "silhouette",
+              "body_proportions",
+              "clothing",
+              "accessories",
+              "markings",
+              "source_environment",
+              "composition"
+            ]
+          }
+        },
+        "unknown_geometry_policy": {
+          "const": "label_as_inferred_or_unknown"
+        }
+      }
+    },
+    "model_asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "source_preserved",
+        "identity_match"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_imported",
+            "staged",
+            "validated",
+            "quarantined"
+          ]
+        },
+        "asset_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^([a-fA-F0-9]{64})?$"
+        },
+        "source_preserved": {
+          "type": "boolean"
+        },
+        "identity_match": {
+          "enum": [
+            "not_compared",
+            "matches_reference",
+            "conflict_detected",
+            "needs_review"
+          ]
+        },
+        "geometry_fingerprint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "measured_dimensions_m": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/vector3"
+            }
+          ]
+        },
+        "rig_status": {
+          "enum": [
+            "unknown",
+            "static_mesh",
+            "rig_present_unverified",
+            "rig_validated_for_profile",
+            "rig_rejected"
+          ]
+        }
+      }
+    },
+    "editing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allow_deliberate_deformation",
+        "automatic_identity_repair",
+        "history"
+      ],
+      "properties": {
+        "allow_deliberate_deformation": {
+          "const": true
+        },
+        "automatic_identity_repair": {
+          "const": false
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "revision",
+              "operation",
+              "provenance"
+            ],
+            "properties": {
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "operation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "provenance": {
+                "enum": [
+                  "user",
+                  "importer",
+                  "validator",
+                  "ai_proposal"
+                ]
+              },
+              "reversible": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "warnings",
+        "checks"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_run",
+            "passed",
+            "needs_review",
+            "failed"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "immutable",
+        "sha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "image",
+            "model",
+            "image_and_model"
+          ]
+        },
+        "uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^([a-fA-F0-9]{64})?$"
+        },
+        "immutable": {
+          "const": true
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "referenceImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image_id",
+        "view",
+        "sha256",
+        "role"
+      ],
+      "properties": {
+        "image_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "view": {
+          "enum": [
+            "front",
+            "side",
+            "back",
+            "three_quarter",
+            "top",
+            "environment",
+            "full_frame",
+            "unknown"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^([a-fA-F0-9]{64})?$"
+        },
+        "role": {
+          "enum": [
+            "identity_reference",
+            "scene_reference",
+            "both"
+          ]
+        },
+        "visible_regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}
