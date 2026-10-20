@@ -79,7 +79,7 @@ def main() -> None:
     cases.append(("immutable source", bad, "source must remain immutable"))
     bad = copy.deepcopy(manifest); bad["reference_scope"]["mode"] = "character_only"
     cases.append(("character-only must not invent environment", bad, "character-only image must not invent an environment"))
-    bad = copy.deepcopy(manifest); bad["identity_policy"]["automatic_identity_repair"] = True
+    bad = copy.deepcopy(manifest); bad["editing"]["automatic_identity_repair"] = True
     cases.append(("no silent repair", bad, "automatic identity repair must be disabled"))
     bad = copy.deepcopy(manifest); bad["editing"]["allow_deliberate_deformation"] = False
     cases.append(("deliberate deformation", bad, "deliberate user deformation must be allowed"))
