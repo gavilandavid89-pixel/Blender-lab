@@ -157,3 +157,18 @@ If a property cannot be measured, label it unknown. If a visual comparison is un
 ## Explicit limitations
 
 No single image can guarantee complete 3D reconstruction. A valid AABB does not prove anatomical correctness. A present armature does not prove a valid rig. A deterministic manifest does not prove visual similarity. Render and video evaluators will need separate visual regression tests, with human review for ambiguous cases.
+
+
+## Reference framing and pose (including cropped/action references)
+
+A reference image does not have to show the complete character, face the camera, or depict a standing pose. Framing and pose are captured as separate facts:
+
+- Framing: full body, three-quarter body, waist-up, portrait, close-up, wide environment, custom, or unknown; record whether the character is fully visible and which regions are cropped.
+- Camera view: front, three-quarter, side, back, top, high/low angle, overhead, custom, or unknown. Record perspective versus orthographic when known.
+- Pose: standing, walking, running, sitting, kneeling, lying, jumping, crouching, reaching, asymmetrical, custom, or unknown. This describes the observed pose, **not** a mandatory rig rest pose.
+- A cropped hand/leg/foot is not a missing-model error. It is outside the evidence in that image. Keep the region unknown/inferred until other references, the model, or the user clarifies it.
+- Do not auto-rotate a character to front, force a T-pose, or straighten limbs merely to satisfy a reference panel. Keep the source camera/composition and show any normalized inspection pose as a separate preview.
+- Support multiple references with distinct views and poses attached to the same character/version. They are evidence for different visible regions, not frames that must be averaged into one pose.
+- Animation validation must separate source pose, rig rest pose, and current animation pose. Any retargeting or pose normalization needs an explicit preview and reversible operation.
+
+Acceptance checks: a waist-up three-quarter reaching pose validates; a cropped leg does not fail intake; a side/back/lying reference is retained without forced front/T-pose conversion; and missing geometry is not guessed from pixels outside the crop.
