@@ -104,6 +104,16 @@ def validate_plan(plan: Any, snapshot: Any) -> list[str]:
         scale = transform.get("scale")
         if _finite_vector3(scale) and any(v <= 0 for v in scale):
             errors.append(f"{prefix}.transform.scale values must be positive")
+        current_transform = by_id[target].get("transform")
+        if isinstance(current_transform, dict):
+            current_rotation = current_transform.get("rotation_euler_rad")
+            proposed_rotation = transform.get("rotation_euler_rad")
+            if _finite_vector3(current_rotation) and _finite_vector3(proposed_rotation) and proposed_rotation != current_rotation:
+                errors.append(f"{prefix}.transform.rotation_euler_rad changes are not authorized by planner v1")
+            current_scale = current_transform.get("scale")
+            proposed_scale = transform.get("scale")
+            if _finite_vector3(current_scale) and _finite_vector3(proposed_scale) and proposed_scale != current_scale:
+                errors.append(f"{prefix}.transform.scale changes are not authorized by planner v1")
         position = transform.get("position")
         if _finite_vector3(position):
             if any(position[j] < bounds["min"][j] or position[j] > bounds["max"][j] for j in range(3)):
@@ -146,7 +156,7 @@ def request_plan(prompt: str, snapshot: dict[str, Any], api_key: str, model: str
         "rotation_euler_rad:[x,y,z], scale:[x,y,z]}}. Use meters, radians, and the supplied axes. "
         "Only target IDs that exist in the supplied snapshot. Preserve every entity's identity, "
         "role, parent, asset and appearance. Do not invent IDs. Do not emit create/delete operations. "
-        "Keep all positions within hard world bounds and all scales positive. Include only entities "
+        "Keep all positions within hard world bounds. Rotation and scale must remain exactly equal to the current target transform; this planner version may change position only. Include only entities "
         "that need to move; preserve untouched transforms exactly. If the request is ambiguous, return "
         "operations:[] and explain the ambiguity in summary."
     )
