@@ -650,6 +650,14 @@ class WorldTransactionTests(unittest.TestCase):
             self.commit(**self.commit_args(expected_version=2, timestamp=3.0))
         self.assertEqual(2, self.store.load_latest("world-alpha")["version"])
 
+    def test_noop_transform_is_rejected_without_commit(self):
+        args = self.commit_args()
+        args["plan"]["operations"][0]["transform"]["position"] = [0.0, 0.0, 0.0]
+        args["target_bounds"] = copy.deepcopy(self.initial["entities"][1]["bounds"])
+        with self.assertRaisesRegex(self.TransactionError, "no-op transform"):
+            self.commit(**args)
+        self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
