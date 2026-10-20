@@ -17,8 +17,8 @@ Flujo permitido:
 4. Decodificar JSON y comprobar el esquema operativo.
 5. Rechazar el plan completo si hay un error.
 6. Mostrar/guardar una propuesta marcada como `proposed`.
-7. En una fase posterior, un orquestador independiente tendrá que validarla contra el estado vigente, generar un evento aprobado y aplicar una nueva versión mediante el contrato de estado del mundo.
-8. Verificar después la aplicación y conservar evidencia.
+7. La función `scripts/world_state_transaction.py::commit_approved_transform` puede convertir una propuesta de una sola transformación en un evento aprobado y una nueva versión persistida, siempre que reciba aprobación explícita de un caller confiable y los límites AABB ya evaluados por Blender.
+8. El adaptador de Blender debe ejecutar por separado la aplicación en escena, leer de vuelta los valores y comparar los límites reales; la transacción no guarda ni modifica por sí sola el archivo .blend.
 
 No se permite que una respuesta del modelo escriba directamente snapshots, eventos, objetos Blender, archivos del proyecto o historial persistente. No se deben confundir `PROPOSAL_VALIDATED` y `WORLD_STATE_COMMITTED`: el primero no significa que el mundo haya cambiado.
 
@@ -87,7 +87,15 @@ Una orden ambigua puede devolver `operations: []` con explicación. La lista vac
 
 El adaptador actual emite `proposed` para planes estructuralmente válidos, incluso si la lista de operaciones está vacía. La clasificación explícita de ambigüedad es una mejora futura y no debe darse por implementada.
 
-## 6. Pruebas y puertas de CI
+## 6. Transacción de estado implementada y límites
+
+El módulo `scripts/world_state_transaction.py` ofrece una primera transacción de una sola transformación. Verifica la versión esperada frente al último snapshot persistido, exige etiqueta explícita de aprobación, valida que el destino siga existiendo, prohíbe cambios de rotación y escala, exige AABB evaluado con tipo `aabb`, reproduce el evento aprobado, comprueba la versión siguiente y lee de vuelta el snapshot persistido. Los fallos de validación ocurren antes de guardar una versión nueva.
+
+La etiqueta `approved_by` es evidencia/auditoría, no una credencial criptográfica. El caller debe aplicar una puerta de aprobación autenticada. Además, la tienda es de un solo escritor: no proporciona un compare-and-swap atómico entre procesos ni bloqueo distribuido. No ejecutar varios escritores concurrentes sobre la misma tienda.
+
+**Todavía no es una transacción de extremo a extremo con Blender.** La integración debe primero aplicar en una escena de staging o poder restaurarla con certeza, medir los límites evaluados, y solo después persistir. La función transaccional no escribe el archivo `.blend`; no afirmar que la escena y el snapshot se confirmaron juntos.
+
+## 7. Pruebas y puertas de CI
 
 ### Pruebas sin red
 
@@ -111,7 +119,7 @@ Si el secreto no está configurado, el paso declara `SKIP`; esa ejecución no pr
 
 La prueba real de proveedor solo verifica una propuesta. No prueba todavía que un plan de lenguaje natural pueda convertirse en evento aprobado, persistirse y aplicarse a Blender. El siguiente módulo debe probar una transacción de extremo a extremo: validar contra versión vigente, rechazar snapshot obsoleto, crear evento aprobado, aplicar de forma atómica, comprobar invariantes y rollback completo si falla cualquier postcondición.
 
-## 7. Límites explícitos
+## 8. Límites explícitos
 
 - No crea ni elimina entidades.
 - No cambia identidad, rol, parentado, asset ni apariencia.
@@ -121,11 +129,11 @@ La prueba real de proveedor solo verifica una propuesta. No prueba todavía que 
 - La validación de posición del adaptador no reemplaza el contrato completo del mundo ni el chequeo de AABB/colisiones en Blender.
 - Una propuesta correcta no garantiza que la transformación sea físicamente alcanzable o visualmente correcta.
 
-## 8. Próximos módulos recomendados
+## 9. Próximos módulos recomendados
 
 - **AI-02 — Normalizador de intención:** traducir frases a una intención tipada; preservar explícitos, marcar inferencias y devolver preguntas ante ambigüedad.
 - **AI-03 — Comparador de restricciones:** comparar plan con versión vigente y ledger de restricciones; informar conflictos sin resolverlos silenciosamente.
-- **AI-04 — Validador de transacción:** convertir propuestas aceptadas en eventos aprobados, con precondición de versión, atomicidad y rollback.
+- **AI-04 — Transacción Blender/snapshot de extremo a extremo:** conectar la transacción de estado existente con staging de Blender, medición de AABB, read-back, compensación y persistencia coordinada.
 - **AI-05 — Adaptador Blender controlado:** aplicar solo eventos validados a entidades mapeadas, verificar lectura de vuelta, AABB y objetos no objetivo.
 - **AI-06 — Auditor de evidencia:** registrar hash de snapshot, prompt, modelo, respuesta redactada de secretos, resultado de validación, evento y artefactos.
 - **AI-07 — Evaluador de continuidad:** más adelante, comparar fotogramas/vídeo con identidad, presencia de entidades, geometría, pose y cámara; “no medido” nunca equivale a “aprobado”.
