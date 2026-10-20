@@ -644,10 +644,10 @@ class WorldTransactionTests(unittest.TestCase):
             self.commit(**args)
         self.assertEqual(1, self.store.load_latest("world-alpha")["version"])
 
-    def test_event_id_reuse_is_rejected_without_commit(self):
+    def test_duplicate_event_id_is_rejected_without_commit(self):
         self.commit(**self.commit_args())
-        with self.assertRaisesRegex(self.TransactionError, "stale proposal"):
-            self.commit(**self.commit_args(expected_version=1))
+        with self.assertRaisesRegex(self.TransactionError, "duplicates event id"):
+            self.commit(**self.commit_args(expected_version=2, timestamp=3.0))
         self.assertEqual(2, self.store.load_latest("world-alpha")["version"])
 
 
