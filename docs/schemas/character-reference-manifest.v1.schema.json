@@ -72,6 +72,148 @@
             "string",
             "null"
           ]
+        },
+        "framing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "primary_framing",
+            "character_fully_visible",
+            "cropped_regions",
+            "composition_is_intentional"
+          ],
+          "properties": {
+            "primary_framing": {
+              "enum": [
+                "full_body",
+                "three_quarter_body",
+                "waist_up",
+                "portrait",
+                "close_up",
+                "environment_wide",
+                "custom",
+                "unknown"
+              ]
+            },
+            "character_fully_visible": {
+              "type": "boolean"
+            },
+            "cropped_regions": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "head",
+                  "torso",
+                  "left_arm",
+                  "right_arm",
+                  "left_hand",
+                  "right_hand",
+                  "left_leg",
+                  "right_leg",
+                  "left_foot",
+                  "right_foot",
+                  "tail",
+                  "accessories",
+                  "other"
+                ]
+              }
+            },
+            "composition_is_intentional": {
+              "type": "boolean"
+            },
+            "camera_view": {
+              "enum": [
+                "front",
+                "three_quarter",
+                "side",
+                "back",
+                "top",
+                "low_angle",
+                "high_angle",
+                "overhead",
+                "custom",
+                "unknown"
+              ]
+            },
+            "perspective": {
+              "enum": [
+                "orthographic",
+                "perspective",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "pose": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pose_kind",
+            "is_reference_pose_not_required_rest_pose",
+            "pose_confidence"
+          ],
+          "properties": {
+            "pose_kind": {
+              "enum": [
+                "standing",
+                "walking",
+                "running",
+                "sitting",
+                "kneeling",
+                "lying",
+                "jumping",
+                "crouching",
+                "reaching",
+                "combat",
+                "dance",
+                "gesture",
+                "asymmetric",
+                "custom",
+                "unknown"
+              ]
+            },
+            "is_reference_pose_not_required_rest_pose": {
+              "const": true
+            },
+            "pose_confidence": {
+              "enum": [
+                "observed",
+                "partially_observed",
+                "inferred",
+                "unknown"
+              ]
+            },
+            "notes": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "visibility_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cropped_body_parts_are_not_missing_asset_errors",
+            "hidden_geometry_policy",
+            "do_not_force_front_or_t_pose"
+          ],
+          "properties": {
+            "cropped_body_parts_are_not_missing_asset_errors": {
+              "const": true
+            },
+            "hidden_geometry_policy": {
+              "const": "unknown_or_inferred_until_additional_evidence"
+            },
+            "do_not_force_front_or_t_pose": {
+              "const": true
+            },
+            "allow_multiple_pose_references": {
+              "const": true
+            }
+          }
         }
       }
     },
