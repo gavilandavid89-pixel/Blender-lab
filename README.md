@@ -187,6 +187,7 @@ Cada hito debe terminar con código, pruebas, documentación y evidencia reprodu
 ## Documentación técnica
 
 - [Contrato detallado del planificador de IA, reglas de rechazo y módulos AI-02–AI-07](docs/AI_PLANNER_CONTRACT.md)
+- [Transacción de propuestas aprobadas hacia snapshots versionados](scripts/world_state_transaction.py)
 - [Arquitectura funcional y módulos M00–M13](docs/STLAT_ENGINE_SPEC.md)
 - [Contratos operativos de módulos M00–M16](docs/SCENE_AND_MODULE_CONTRACTS.md)
 - [Reglas de escenas neutras y valores por defecto](docs/NEUTRAL_SCENES.md)
