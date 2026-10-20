@@ -36,8 +36,7 @@ jobs:
       - name: Run ST-LAT contract regression tests
         run: python3 -m unittest discover -s tests -v
 
-      - name: Optional live AI planner smoke test (Groq)
-        continue-on-error: true
+      - name: Live AI planner contract test (Groq)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         shell: bash
@@ -56,11 +55,29 @@ jobs:
           import json
           from pathlib import Path
           result = json.loads(Path("artifacts/ai-world-plan.json").read_text(encoding="utf-8"))
+          snapshot = json.loads(Path("tests/fixtures/ai_planner_snapshot.json").read_text(encoding="utf-8"))
           plan = result.get("plan", {})
           ops = plan.get("operations", [])
-          if result.get("status") != "proposed" or not any(op.get("target_id") == "char.001" for op in ops):
-              raise SystemExit("AI planner smoke test did not propose a transform for char.001")
-          print("STLAT_AI_PLANNER_SMOKE_TEST=PASS")
+          if result.get("status") != "proposed":
+              raise SystemExit("AI planner contract failed: status is not proposed")
+          if len(ops) != 1:
+              raise SystemExit(f"AI planner contract failed: expected exactly 1 operation, got {len(ops)}")
+          op = ops[0]
+          if op.get("type") != "transform_updated" or op.get("target_id") != "char.001":
+              raise SystemExit("AI planner contract failed: operation type/target mismatch")
+          transform = op.get("transform", {})
+          target = next(e for e in snapshot["entities"] if e["id"] == "char.001")
+          if transform.get("position") != [0.3, 0.0, 1.0]:
+              raise SystemExit(f"AI planner contract failed: wrong position {transform.get('position')!r}")
+          if transform.get("rotation_euler_rad") != target["transform"]["rotation_euler_rad"]:
+              raise SystemExit("AI planner contract failed: rotation changed without authorization")
+          if transform.get("scale") != target["transform"]["scale"]:
+              raise SystemExit("AI planner contract failed: scale changed without authorization")
+          if any(item.get("target_id") == "prop.ball.001" for item in ops):
+              raise SystemExit("AI planner contract failed: protected ball was modified")
+          if any(key in op for key in ("identity_ref", "identity_signature", "asset_id", "appearance_id", "role", "parent_id")):
+              raise SystemExit("AI planner contract failed: protected identity/relationship fields appeared")
+          print("STLAT_AI_PLANNER_CONTRACT_TEST=PASS (exact target, exact position, unchanged rotation/scale, no collateral edits)")
           PY
 
       - name: Self-test motion report validator
