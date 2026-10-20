@@ -209,3 +209,10 @@ Cada hito debe terminar con código, pruebas, documentación y evidencia reprodu
 ## Importación de personajes y editor 3D
 
 El siguiente contrato de diseño está en [docs/CHARACTER_INTAKE_AND_EDITOR_CONTRACT.md](docs/CHARACTER_INTAKE_AND_EDITOR_CONTRACT.md). Define precedencia de imagen de referencia, medición de geometría evaluada, unidades y proporciones, preparación del rig, manifiesto de identidad, perfiles de estilo y controles de editor para escritorio y móvil. **Especificación solamente:** el validador de importación y la interfaz visual aún no están implementados. Una imagen 2D no permite deducir con certeza toda la geometría 3D; las propiedades no observables deben marcarse como inferidas o desconocidas y dejarse editables por el usuario.
+
+
+## Character reference intake
+
+- Contract and validator: `docs/CHARACTER_REFERENCE_MANIFEST.md`
+- Schema: `docs/schemas/character-reference-manifest.v1.schema.json`
+- Example: `docs/examples/character-reference-manifest.v1.json`
