@@ -646,8 +646,13 @@ class WorldTransactionTests(unittest.TestCase):
 
     def test_duplicate_event_id_is_rejected_without_commit(self):
         self.commit(**self.commit_args())
+        args = self.commit_args(expected_version=2, timestamp=3.0)
+        # Use a genuinely different candidate transform so the duplicate event ID
+        # check is reached instead of the transaction's earlier no-op guard.
+        args["plan"]["operations"][0]["transform"]["position"] = [1.5, 0.0, 0.0]
+        args["target_bounds"] = {"min": [1.0, -0.5, 0.0], "max": [2.0, 0.5, 2.0], "kind": "aabb"}
         with self.assertRaisesRegex(self.TransactionError, "duplicates event id"):
-            self.commit(**self.commit_args(expected_version=2, timestamp=3.0))
+            self.commit(**args)
         self.assertEqual(2, self.store.load_latest("world-alpha")["version"])
 
     def test_noop_transform_is_rejected_without_commit(self):
