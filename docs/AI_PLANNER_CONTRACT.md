@@ -36,6 +36,7 @@ La reducción de contexto es intencional, pero no reemplaza la validación del s
 - Posición: vector de tres números finitos, en metros.
 - Rotación: `rotation_euler_rad`, tres números finitos en radianes.
 - Escala: vector de tres números finitos estrictamente positivos.
+- **Alcance de planner v1:** solo puede cambiar posición. Rotación y escala deben coincidir exactamente con el transform vigente; cambios en cualquiera de esos campos se rechazan antes de que la propuesta salga del planificador.
 - Coordenadas: ejes definidos en el snapshot; no inferir una convención diferente.
 - Posición dentro de `bounds.min/max`; la implementación inicial aplica además el suelo a entidades no cámara.
 
