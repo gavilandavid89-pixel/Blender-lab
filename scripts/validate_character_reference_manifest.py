@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free checks for the character-reference manifest contract."""
+"""Dependency-free checks for the source-first character reference contract."""
 from __future__ import annotations
 
 import copy
@@ -41,6 +41,21 @@ def validate(schema: dict, manifest: dict) -> list[str]:
         errors.append("image with environment must reconstruct the visible environment")
     if mode == "character_only" and env_policy != "no_environment_in_source":
         errors.append("character-only image must not invent an environment from a model")
+    framing = scope.get("framing", {})
+    if framing.get("character_fully_visible") is False and not framing.get("cropped_regions"):
+        errors.append("cropped reference must identify cropped regions or explicitly mark them other")
+    pose = scope.get("pose", {})
+    if pose.get("is_reference_pose_not_required_rest_pose") is not True:
+        errors.append("observed pose must not be treated as a mandatory rig rest pose")
+    visibility = scope.get("visibility_policy", {})
+    if visibility.get("cropped_body_parts_are_not_missing_asset_errors") is not True:
+        errors.append("cropped body parts must not be treated as missing-asset errors")
+    if visibility.get("hidden_geometry_policy") != "unknown_or_inferred_until_additional_evidence":
+        errors.append("hidden geometry must remain unknown/inferred until supported")
+    if visibility.get("do_not_force_front_or_t_pose") is not True:
+        errors.append("editor must not force front view or T-pose")
+    if visibility.get("allow_multiple_pose_references") is not True:
+        errors.append("multiple pose references must be supported")
     identity = manifest["identity_policy"]
     if identity.get("authority") != "source_reference_and_explicit_user_edits":
         errors.append("source reference and explicit user edits must remain authoritative")
@@ -85,12 +100,34 @@ def main() -> None:
     cases.append(("deliberate deformation", bad, "deliberate user deformation must be allowed"))
     bad = copy.deepcopy(manifest); bad["model_asset"]["source_preserved"] = False
     cases.append(("preserve model source", bad, "model source must remain recoverable"))
+    bad = copy.deepcopy(manifest); bad["reference_scope"]["framing"]["character_fully_visible"] = False
+    bad["reference_scope"]["framing"]["cropped_regions"] = []
+    cases.append(("cropped reference regions", bad, "cropped reference must identify cropped regions"))
+    bad = copy.deepcopy(manifest); bad["reference_scope"]["pose"]["is_reference_pose_not_required_rest_pose"] = False
+    cases.append(("pose not a mandatory rest pose", bad, "observed pose must not be treated as a mandatory rig rest pose"))
+    bad = copy.deepcopy(manifest); bad["reference_scope"]["visibility_policy"]["do_not_force_front_or_t_pose"] = False
+    cases.append(("do not force front or T pose", bad, "editor must not force front view or T-pose"))
     for label, candidate, expected in cases:
         found = validate(schema, candidate)
         if not any(expected in message for message in found):
             raise SystemExit(f"CHARACTER_REFERENCE_MANIFEST=FAIL: negative test did not reject {label}: {found}")
+    # Partial crops and non-front poses are valid, not validator failures.
+    cropped = copy.deepcopy(manifest)
+    cropped["reference_scope"]["framing"].update({"primary_framing":"waist_up","character_fully_visible":False,"cropped_regions":["left_leg","right_leg"],"camera_view":"three_quarter"})
+    cropped["reference_scope"]["pose"].update({"pose_kind":"reaching","pose_confidence":"partially_observed"})
+    if validate(schema, cropped):
+        raise SystemExit(f"CHARACTER_REFERENCE_MANIFEST=FAIL: valid cropped/non-front reference rejected: {validate(schema, cropped)}")
     print("CHARACTER_REFERENCE_MANIFEST=PASS")
-    print(json.dumps({"schema": manifest["schema"], "reference_mode": manifest["reference_scope"]["mode"], "environment_policy": manifest["reference_scope"]["environment_policy"], "negative_cases_passed": len(cases), "deliberate_deformation_allowed": manifest["editing"]["allow_deliberate_deformation"], "automatic_identity_repair": manifest["editing"]["automatic_identity_repair"]}, indent=2))
+    print(json.dumps({
+        "schema": manifest["schema"],
+        "reference_mode": manifest["reference_scope"]["mode"],
+        "environment_policy": manifest["reference_scope"]["environment_policy"],
+        "negative_cases_passed": len(cases),
+        "cropped_non_front_reference_accepted": True,
+        "reference_pose_not_forced_to_rest_pose": True,
+        "deliberate_deformation_allowed": manifest["editing"]["allow_deliberate_deformation"],
+        "automatic_identity_repair": manifest["editing"]["automatic_identity_repair"]
+    }, indent=2))
 
 
 if __name__ == "__main__":
