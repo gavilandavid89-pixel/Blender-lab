@@ -98,7 +98,7 @@ jobs:
       - name: Install Linux graphics runtime
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl xz-utils libegl1 libgl1 libxkbcommon0 libxi6 libxrender1 libxfixes3 libx11-6 libxext6 libsm6 libice6 libxxf86vm1 libgomp1
+          sudo apt-get install -y curl xz-utils ffmpeg libegl1 libgl1 libxkbcommon0 libxi6 libxrender1 libxfixes3 libx11-6 libxext6 libsm6 libice6 libxxf86vm1 libgomp1
 
       - name: Install Blender 5.2.2
         shell: bash
@@ -144,6 +144,38 @@ jobs:
             tail -n 100 blender.log
             exit "$validation_status"
           fi
+
+      - name: Render and verify a real MP4 smoke test
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          BLENDER_BIN="/tmp/blender-5.2.2-linux-x64/blender"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+          "$BLENDER_BIN" --background artifacts/stlat-world3d.blend --python scripts/stlat_video_smoke.py 2>&1 | tee -a blender.log
+          test -s artifacts/stlat-video-smoke.mp4
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -show_entries format=duration,size -of json artifacts/stlat-video-smoke.mp4 > artifacts/stlat-video-smoke-probe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/stlat-video-smoke.json").read_text())
+          probe = json.loads(Path("artifacts/stlat-video-smoke-probe.json").read_text())
+          streams = probe.get("streams", [])
+          if report.get("status") != "rendered" or report.get("ai_video_model_connected") is not False:
+              raise SystemExit("VIDEO_SMOKE_VALIDATION=FAIL: incorrect or missing report")
+          if len(streams) != 1:
+              raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: expected one video stream, got {len(streams)}")
+          stream = streams[0]
+          if stream.get("codec_name") != "h264" or (stream.get("width"), stream.get("height")) != (640, 360):
+              raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: unexpected video stream: {stream}")
+          if int(stream.get("nb_frames", "0")) < 40:
+              raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: too few frames: {stream.get('nb_frames')}")
+          duration = float(probe.get("format", {}).get("duration", 0))
+          if duration < 1.5 or int(probe.get("format", {}).get("size", 0)) < 1024:
+              raise SystemExit("VIDEO_SMOKE_VALIDATION=FAIL: duration or file size is implausible")
+          print(f"VIDEO_SMOKE_VALIDATION=PASS (H.264, {stream['width']}x{stream['height']}, {stream['nb_frames']} frames, {duration:.2f}s)")
+          PY
 
       - name: Rebuild world without rendering and compare stable IDs
         if: success()

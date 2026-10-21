@@ -150,6 +150,10 @@ El workflow instala Blender 5.2.2 en Ubuntu, ejecuta validaciones de contrato, c
 - Para considerar verificada una capacidad, debe existir evidencia relevante, pruebas positivas y negativas cuando corresponda y una ejecución completa exitosa sobre el commit que contiene la implementación.
 - La matriz de pruebas registra el alcance de cada caso y las capacidades pendientes: [docs/TEST_MATRIX.md](docs/TEST_MATRIX.md).
 
+### MP4 pipeline smoke test
+
+The CI now renders `artifacts/stlat-video-smoke.mp4` from the saved Blender scene and verifies the encoded file with `ffprobe` (H.264, 640×360, frame count, duration and size). The character proxy moves and returns to its starting position. This is a **render-pipeline test only**: it does not claim that a video-generation model is connected or that AI planned the motion. The report states this explicitly. The next milestone is to pass a validated real AI plan into the animation stage and evaluate temporal consistency.
+
 ## Estado real y límites conocidos
 
 ### Implementado parcialmente / con pruebas específicas
