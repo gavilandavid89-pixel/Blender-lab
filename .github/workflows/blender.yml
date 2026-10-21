@@ -167,8 +167,8 @@ jobs:
           if len(streams) != 1:
               raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: expected one video stream, got {len(streams)}")
           stream = streams[0]
-          if stream.get("codec_name") != "h264" or (stream.get("width"), stream.get("height")) != (640, 360):
-              raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: unexpected video stream: {stream}")
+          if stream.get("codec_name") != "h264" or (stream.get("width"), stream.get("height")) != (320, 180):
+              raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: unexpected video stream (expected effective 320x180 at 50% scale): {stream}")
           if int(stream.get("nb_frames", "0")) < 40:
               raise SystemExit(f"VIDEO_SMOKE_VALIDATION=FAIL: too few frames: {stream.get('nb_frames')}")
           duration = float(probe.get("format", {}).get("duration", 0))
