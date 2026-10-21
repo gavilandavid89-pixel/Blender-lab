@@ -33,7 +33,15 @@ scene.render.fps = 24
 scene.render.fps_base = 1.0
 scene.render.resolution_x = 640
 scene.render.resolution_y = 360
-scene.render.resolution_percentage = 100
+scene.render.resolution_percentage = 50
+# Use Workbench for this CI smoke clip: software Eevee rendering took ~26 s/frame
+# and exceeded the 20-minute job limit. Workbench keeps the test focused on motion,
+# frame sequencing, and MP4 encoding rather than photorealistic shading.
+scene.render.engine = "BLENDER_WORKBENCH"
+scene.display.shading.light = "STUDIO"
+scene.display.shading.color_type = "MATERIAL"
+scene.display.shading.show_shadows = True
+scene.display.shading.show_cavity = True
 # Blender 5.2 no longer exposes FFMPEG as an image_settings.file_format enum.
 # Render a temporary PNG sequence and encode it with the system ffmpeg binary.
 scene.render.image_settings.file_format = "PNG"
