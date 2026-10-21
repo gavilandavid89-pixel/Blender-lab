@@ -151,6 +151,24 @@ class AIWorldPlannerValidationTests(unittest.TestCase):
         snapshot["entities"].append(copy.deepcopy(snapshot["entities"][0]))
         self.assertTrue(any("duplicate id char.001" in e for e in validate_plan(self.plan, snapshot)))
 
+    def test_snapshot_missing_current_transform_is_rejected(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        del snapshot["entities"][0]["transform"]
+        errors = validate_plan(self.plan, snapshot)
+        self.assertTrue(any("must contain a transform object" in e for e in errors))
+
+    def test_snapshot_missing_rotation_is_rejected(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        del snapshot["entities"][0]["transform"]["rotation_euler_rad"]
+        errors = validate_plan(self.plan, snapshot)
+        self.assertTrue(any(".transform.rotation_euler_rad must be a finite vector3" in e for e in errors))
+
+    def test_snapshot_invalid_scale_is_rejected(self):
+        snapshot = copy.deepcopy(self.snapshot)
+        snapshot["entities"][0]["transform"]["scale"] = [1.0, 0.0, 1.0]
+        errors = validate_plan(self.plan, snapshot)
+        self.assertTrue(any("snapshot entity char.001.transform.scale values must be positive" in e for e in errors))
+
     def test_inverted_world_bounds_are_rejected(self):
         snapshot = copy.deepcopy(self.snapshot)
         snapshot["bounds"]["min"][0] = 5.0
