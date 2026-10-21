@@ -90,7 +90,7 @@ report = {
     "frame_end": scene.frame_end,
     "expected_frames": scene.frame_end - scene.frame_start + 1,
     "fps": scene.render.fps,
-    "resolution": [scene.render.resolution_x, scene.render.resolution_y],
+    "resolution": [scene.render.resolution_x * scene.render.resolution_percentage // 100, scene.render.resolution_y * scene.render.resolution_percentage // 100],
     "animated_character_parts": len(character_parts),
     "motion": {"kind": "deterministic_smoke_fixture", "x_offset_peak_m": 0.65, "returns_to_start": True},
     "ai_video_model_connected": False,
