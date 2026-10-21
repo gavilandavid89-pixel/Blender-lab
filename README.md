@@ -220,3 +220,4 @@ El siguiente contrato de diseño está en [docs/CHARACTER_INTAKE_AND_EDITOR_CONT
 - Contract and validator: `docs/CHARACTER_REFERENCE_MANIFEST.md`
 - Schema: `docs/schemas/character-reference-manifest.v1.schema.json`
 - Example: `docs/examples/character-reference-manifest.v1.json`
+
