@@ -8,6 +8,8 @@ Run with Blender opening artifacts/stlat-world3d.blend before this script.
 """
 import json
 from pathlib import Path
+import subprocess
+import tempfile
 import bpy
 
 ROOT = Path.cwd()
@@ -32,12 +34,10 @@ scene.render.fps_base = 1.0
 scene.render.resolution_x = 640
 scene.render.resolution_y = 360
 scene.render.resolution_percentage = 100
-scene.render.image_settings.file_format = "FFMPEG"
-scene.render.ffmpeg.format = "MPEG4"
-scene.render.ffmpeg.codec = "H264"
-scene.render.ffmpeg.constant_rate_factor = "MEDIUM"
-scene.render.filepath = str(VIDEO)
-scene.render.use_file_extension = True
+# Blender 5.2 no longer exposes FFMPEG as an image_settings.file_format enum.
+# Render a temporary PNG sequence and encode it with the system ffmpeg binary.
+scene.render.image_settings.file_format = "PNG"
+scene.render.image_settings.color_mode = "RGB"
 
 for obj in character_parts:
     base = original_locations[obj.name]
@@ -46,14 +46,32 @@ for obj in character_parts:
         obj.location = (base.x + dx, base.y, base.z)
         obj.keyframe_insert(data_path="location", frame=frame, group="ST-LAT smoke motion")
     if obj.animation_data and obj.animation_data.action:
-        for fcurve in obj.animation_data.action.fcurves:
+        action = obj.animation_data.action
+        # Blender 5.x may expose layered actions; tolerate actions without legacy fcurves.
+        for fcurve in getattr(action, "fcurves", []):
             for key in fcurve.keyframe_points:
                 key.interpolation = "LINEAR"
 
 scene.frame_set(1)
-bpy.ops.render.render(animation=True)
+with tempfile.TemporaryDirectory(prefix="stlat-video-frames-") as temp_dir:
+    temp_path = Path(temp_dir)
+    scene.render.filepath = str(temp_path / "frame-")
+    scene.render.use_file_extension = True
+    bpy.ops.render.render(animation=True)
+    pattern = temp_path / "frame-%04d.png"
+    encode = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-framerate", str(scene.render.fps),
+        "-start_number", str(scene.frame_start),
+        "-i", str(pattern),
+        "-frames:v", str(scene.frame_end - scene.frame_start + 1),
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart", str(VIDEO),
+    ]
+    subprocess.run(encode, check=True, capture_output=True, text=True)
+
 if not VIDEO.is_file() or VIDEO.stat().st_size < 1024:
-    raise RuntimeError(f"Blender did not produce a plausible MP4: {VIDEO}")
+    raise RuntimeError(f"Blender/ffmpeg did not produce a plausible MP4: {VIDEO}")
 
 report = {
     "schema": "stlat.video-smoke.v1",
