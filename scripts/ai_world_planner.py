@@ -56,6 +56,20 @@ def validate_plan(plan: Any, snapshot: Any) -> list[str]:
         if entity_id in by_id:
             errors.append(f"snapshot.entities contains duplicate id {entity_id}")
         by_id[entity_id] = entity
+        # Fail closed: a proposal cannot be checked for unauthorized rotation/scale
+        # changes unless the canonical current transform is complete and finite.
+        current = entity.get("transform")
+        if not isinstance(current, dict):
+            errors.append(f"snapshot entity {entity_id} must contain a transform object")
+            continue
+        for key in ("position", "rotation_euler_rad", "scale"):
+            if not _finite_vector3(current.get(key)):
+                errors.append(f"snapshot entity {entity_id}.transform.{key} must be a finite vector3")
+        current_scale = current.get("scale")
+        if _finite_vector3(current_scale) and any(v <= 0 for v in current_scale):
+            errors.append(f"snapshot entity {entity_id}.transform.scale values must be positive")
+    if errors:
+        return errors
     bounds = snapshot.get("bounds")
     if not isinstance(bounds, dict) or not _finite_vector3(bounds.get("min")) or not _finite_vector3(bounds.get("max")):
         return errors + ["snapshot.bounds must contain finite min/max vector3 values"]
